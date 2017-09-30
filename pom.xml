@@ -7,15 +7,14 @@
    <groupId>org.jmockit</groupId><artifactId>jmockit</artifactId><version>2.0-beta1</version>
    <packaging>jar</packaging>
    <prerequisites>
-      <maven>3.3.1</maven>
+      <maven>3.5.0</maven>
    </prerequisites>
 
    <name>JMockit 2</name>
    <description>
-      JMockit is a Java toolkit for developer (unit/integration) testing.
-      It contains mocking APIs and other tools, supporting both JUnit and TestNG.
-      The mocking APIs allow all kinds of Java code, without testability restrictions, to be tested
-      in isolation from selected dependencies.
+      JMockit is a Java toolkit for automated developer testing.
+      It contains advanced support for the instantiation of objects to be tested, as well as mocking and faking APIs.
+      Both JUnit 4/5 and TestNG are supported.
    </description>
    <url>http://www.jmockit.org</url>
    <licenses>
@@ -28,7 +27,7 @@
    <developers>
       <developer><name>Rogério Liesenfeld</name></developer>
    </developers>
-   <inceptionYear>2006</inceptionYear>
+   <inceptionYear>2017</inceptionYear>
    <scm>
       <url>https://github.com/jmockit/jmockit2</url>
       <connection>scm:git:https://github.com/jmockit/jmockit2.git</connection>
@@ -37,13 +36,6 @@
       <system>GitHub Issues</system>
       <url>https://github.com/jmockit/jmockit2/issues</url>
    </issueManagement>
-   <mailingLists>
-      <mailingList>
-         <name>JMockit Users</name>
-         <archive>http://groups.google.com/group/jmockit-users</archive>
-         <post>jmockit-users@googlegroups.com</post>
-      </mailingList>
-   </mailingLists>
 
    <properties>
       <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -54,14 +46,6 @@
       <testSourceDirectory>test</testSourceDirectory>
       <resources>
          <resource>
-            <directory>.</directory>
-            <includes><include>META-INF/services/org.testng.ITestNGListener</include></includes>
-         </resource>
-         <resource>
-            <directory>src</directory>
-            <includes><include>org/jmockit/*.java</include></includes>
-         </resource>
-         <resource>
             <directory>..</directory>
             <includes>
                <include>LICENSE</include>
@@ -70,31 +54,31 @@
       </resources>
       <plugins>
          <plugin>
-            <artifactId>maven-compiler-plugin</artifactId><version>3.1</version>
+            <artifactId>maven-compiler-plugin</artifactId><version>3.6.2</version>
             <configuration>
                <encoding>UTF-8</encoding>
-               <source>1.8</source><target>1.8</target>
+               <source>1.7</source><target>1.7</target>
                <fork>true</fork>
                <compilerArgs><arg>-Xlint:none</arg></compilerArgs>
                <useIncrementalCompilation>false</useIncrementalCompilation>
             </configuration>
          </plugin>
          <plugin>
-            <artifactId>maven-jar-plugin</artifactId><version>2.4</version>
+            <artifactId>maven-jar-plugin</artifactId><version>3.0.2</version>
             <configuration>
                <archive>
                   <addMavenDescriptor>false</addMavenDescriptor>
                   <manifestEntries>
                      <Premain-Class>org.jmockit.internal.startup.Startup</Premain-Class>
-                     <Agent-Class>org.jmockit.internal.startup.Startup</Agent-Class>
                      <Can-Redefine-Classes>true</Can-Redefine-Classes>
                      <Can-Retransform-Classes>true</Can-Retransform-Classes>
+                     <Built-By/>
                   </manifestEntries>
                </archive>
             </configuration>
          </plugin>
          <plugin>
-            <artifactId>maven-source-plugin</artifactId><version>2.2.1</version>
+            <artifactId>maven-source-plugin</artifactId><version>3.0.1</version>
             <executions>
                <execution>
                   <id>attach-sources</id>
@@ -103,27 +87,31 @@
             </executions>
          </plugin>
          <plugin>
-            <artifactId>maven-javadoc-plugin</artifactId><version>2.9.1</version>
+            <artifactId>maven-javadoc-plugin</artifactId><version>2.10.4</version>
             <configuration>
                <encoding>UTF-8</encoding>
-               <nodeprecated>false</nodeprecated>
+               <nodeprecated>true</nodeprecated>
                <noindex>true</noindex>
                <notree>true</notree>
                <nohelp>true</nohelp>
                <breakiterator>true</breakiterator>
                <use>false</use>
                <source>1.8</source>
-               <windowtitle>JMockit Toolkit API</windowtitle>
-               <doctitle>JMockit Toolkit API Documentation</doctitle>
+               <windowtitle>JMockit 2 Toolkit API</windowtitle>
+               <doctitle>JMockit 2 Toolkit API Documentation</doctitle>
                <stylesheetfile>${project.basedir}/../../jmockit.github.io/api1x/stylesheet.css</stylesheetfile>
-               <overview>${project.basedir}/../../jmockit.github.io/api1x/overview.html</overview>
+               <overview>${project.basedir}/../../jmockit.github.io/api2x/overview.html</overview>
                <header><![CDATA[<a href="http://jmockit.org" target="_top"><img src="resources/logo.png">JMockit Home</a>]]></header>
                <footer><![CDATA[<a href="http://jmockit.org" target="_top"><img src="resources/logo.png">JMockit Home</a>]]></footer>
                <notimestamp>true</notimestamp>
                <quiet>true</quiet>
                <sourcepath>${basedir}/src</sourcepath>
                <subpackages>none</subpackages>
-               <additionalparam>-Xdoclint:none org.jmockit org.jmockit.integration.junit4 org.jmockit.integration.testng</additionalparam>
+               <additionalparam>-Xdoclint:none org.jmockit org.jmockit.integration.junit4</additionalparam>
+               <links>
+                  <link>http://docs.oracle.com/javase/8/docs/api/</link>
+                  <link>http://docs.oracle.com/javaee/7/api/</link>
+               </links>
             </configuration>
             <executions>
                <execution>
@@ -133,7 +121,7 @@
             </executions>
          </plugin>
          <plugin>
-            <artifactId>maven-surefire-plugin</artifactId><version>2.17</version>
+            <artifactId>maven-surefire-plugin</artifactId><version>2.20</version>
             <configuration>
                <skipTests>true</skipTests>
                <disableXmlReport>true</disableXmlReport>
@@ -149,39 +137,13 @@
                      <testNGArtifactName>none:none</testNGArtifactName>
                      <excludes>
                         <exclude>**/*$*</exclude>
-                        <exclude>**/Base*Test.class</exclude>
-                        <exclude>**/JUnit4DecoratorTest.class</exclude>
-                        <exclude>**/testng/*Test.class</exclude>
-                        <exclude>**/MockStateBetweenTestMethodsNGTest.class</exclude>
-                        <exclude>**/mockit/integration/TestedClass.class</exclude>
-                     </excludes>
-                  </configuration>
-               </execution>
-               <execution>
-                  <id>TestNG-tests</id>
-                  <phase>test</phase>
-                  <goals><goal>test</goal></goals>
-                  <configuration>
-                     <skipTests>false</skipTests>
-                     <junitArtifactName>none:none</junitArtifactName>
-                     <includes>
-                        <include>**/testng/*Test.class</include>
-                        <include>**/MockStateBetweenTestMethodsNGTest.class</include>
-                     </includes>
-                     <excludes>
-                        <exclude>**/TestNGViolatedExpectationsTest.class</exclude>
                      </excludes>
                   </configuration>
                </execution>
             </executions>
          </plugin>
          <plugin>
-            <artifactId>maven-gpg-plugin</artifactId><version>1.4</version>
-            <configuration>
-               <executable>/gnupg/pub/gpg.exe</executable>
-               <homedir>/gnupg/mykey</homedir>
-               <useAgent>true</useAgent>
-            </configuration>
+            <artifactId>maven-gpg-plugin</artifactId><version>1.6</version>
             <executions>
                <execution>
                   <id>sign-artifacts</id>
@@ -190,9 +152,8 @@
             </executions>
          </plugin>
          <plugin>
-            <groupId>org.sonatype.plugins</groupId>
-            <artifactId>nexus-staging-maven-plugin</artifactId>
-            <version>1.6.5</version>
+            <groupId>org.sonatype.plugins</groupId><artifactId>nexus-staging-maven-plugin</artifactId>
+            <version>1.6.8</version>
             <extensions>true</extensions>
             <configuration>
                <serverId>sonatype-nexus-staging</serverId>
@@ -205,7 +166,7 @@
 
    <dependencies>
       <dependency>
-         <groupId>com.google.code.findbugs</groupId><artifactId>jsr305</artifactId><version>3.0.0</version>
+         <groupId>com.google.code.findbugs</groupId><artifactId>jsr305</artifactId><version>3.0.2</version>
          <optional>true</optional>
       </dependency>
       <dependency>
@@ -213,14 +174,7 @@
          <optional>true</optional>
       </dependency>
       <dependency>
-         <groupId>org.testng</groupId><artifactId>testng</artifactId><version>6.8.21</version>
-         <optional>true</optional>
-         <exclusions>
-            <exclusion><groupId>org.beanshell</groupId><artifactId>bsh</artifactId></exclusion>
-         </exclusions>
-      </dependency>
-      <dependency>
-         <groupId>javax.persistence</groupId><artifactId>persistence-api</artifactId><version>1.0</version>
+         <groupId>javax.persistence</groupId><artifactId>persistence-api</artifactId><version>1.0.2</version>
          <optional>true</optional>
       </dependency>
       <dependency>
@@ -228,7 +182,14 @@
          <optional>true</optional>
       </dependency>
       <dependency>
-         <groupId>javax</groupId><artifactId>javaee-api</artifactId><version>6.0</version>
+         <groupId>javax</groupId><artifactId>javaee-api</artifactId><version>7.0</version>
+         <optional>true</optional>
+         <exclusions>
+            <exclusion><groupId>com.sun.mail</groupId><artifactId>javax.mail</artifactId></exclusion>
+         </exclusions>
+      </dependency>
+      <dependency>
+         <groupId>org.springframework</groupId><artifactId>spring-web</artifactId><version>4.2.0.RELEASE</version>
          <optional>true</optional>
       </dependency>
    </dependencies>
