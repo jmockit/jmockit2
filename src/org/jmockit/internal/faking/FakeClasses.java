@@ -11,8 +11,7 @@ import java.util.Map.*;
 public final class FakeClasses
 {
    private static final Method ON_TEAR_DOWN_METHOD;
-   static
-   {
+   static {
       try {
          ON_TEAR_DOWN_METHOD = Fake.class.getDeclaredMethod("onTearDown");
          ON_TEAR_DOWN_METHOD.setAccessible(true);
@@ -20,8 +19,7 @@ public final class FakeClasses
       catch (NoSuchMethodException e) { throw new RuntimeException(e); }
    }
 
-   private static void notifyOfTearDown(@Nonnull Fake<?> fake)
-   {
+   private static void notifyOfTearDown(@Nonnull Fake<?> fake) {
       try { ON_TEAR_DOWN_METHOD.invoke(fake); }
       catch (IllegalAccessException ignore) {}
       catch (InvocationTargetException e) { e.getCause().printStackTrace(); }
@@ -31,27 +29,23 @@ public final class FakeClasses
    @Nonnull private final Map<Class<?>, Fake<?>> fakeClassesToFakeInstances;
    @Nonnull public final FakeStates fakeStates;
 
-   public FakeClasses()
-   {
-      startupFakes = new IdentityHashMap<String, Fake<?>>(8);
-      fakeClassesToFakeInstances = new IdentityHashMap<Class<?>, Fake<?>>();
+   public FakeClasses() {
+      startupFakes = new IdentityHashMap<>(8);
+      fakeClassesToFakeInstances = new IdentityHashMap<>();
       fakeStates = new FakeStates();
    }
 
-   void addFake(@Nonnull String fakeClassDesc, @Nonnull Fake<?> fake)
-   {
+   void addFake(@Nonnull String fakeClassDesc, @Nonnull Fake<?> fake) {
       startupFakes.put(fakeClassDesc, fake);
    }
 
-   void addFake(@Nonnull Fake<?> fake)
-   {
+   void addFake(@Nonnull Fake<?> fake) {
       Class<?> fakeClass = fake.getClass();
       fakeClassesToFakeInstances.put(fakeClass, fake);
    }
 
    @Nonnull
-   public Fake<?> getFake(@Nonnull String fakeClassDesc)
-   {
+   public Fake<?> getFake(@Nonnull String fakeClassDesc) {
       Fake<?> startupFake = startupFakes.get(fakeClassDesc);
 
       if (startupFake != null) {
@@ -64,8 +58,7 @@ public final class FakeClasses
    }
 
    @Nullable
-   public Fake<?> findPreviouslyAppliedFake(@Nonnull Fake<?> newFake)
-   {
+   public Fake<?> findPreviouslyAppliedFake(@Nonnull Fake<?> newFake) {
       Class<?> fakeClass = newFake.getClass();
       Fake<?> fakeInstance = fakeClassesToFakeInstances.get(fakeClass);
 
@@ -77,8 +70,7 @@ public final class FakeClasses
       return null;
    }
 
-   private void discardFakeInstancesExceptPreviousOnes(@Nonnull Map<Class<?>, Boolean> previousFakeClasses)
-   {
+   private void discardFakeInstancesExceptPreviousOnes(@Nonnull Map<Class<?>, Boolean> previousFakeClasses) {
       for (Entry<Class<?>, Fake<?>> fakeClassAndInstances : fakeClassesToFakeInstances.entrySet()) {
          Class<?> fakeClass = fakeClassAndInstances.getKey();
 
@@ -91,8 +83,7 @@ public final class FakeClasses
       fakeClassesToFakeInstances.keySet().retainAll(previousFakeClasses.keySet());
    }
 
-   private void discardAllFakeInstances()
-   {
+   private void discardAllFakeInstances() {
       if (!fakeClassesToFakeInstances.isEmpty()) {
          for (Fake<?> fakeInstance : fakeClassesToFakeInstances.values()) {
             notifyOfTearDown(fakeInstance);
@@ -102,8 +93,7 @@ public final class FakeClasses
       }
    }
 
-   public void discardStartupFakes()
-   {
+   public void discardStartupFakes() {
       for (Fake<?> startupFake : startupFakes.values()) {
          notifyOfTearDown(startupFake);
       }
@@ -113,9 +103,8 @@ public final class FakeClasses
    {
       @Nonnull private final Map<Class<?>, Boolean> previousFakeClasses;
 
-      public SavePoint()
-      {
-         previousFakeClasses = new IdentityHashMap<Class<?>, Boolean>();
+      public SavePoint() {
+         previousFakeClasses = new IdentityHashMap<>();
 
          for (Entry<Class<?>, Fake<?>> fakeClassAndInstance : fakeClassesToFakeInstances.entrySet()) {
             Class<?> fakeClass = fakeClassAndInstance.getKey();
@@ -123,13 +112,12 @@ public final class FakeClasses
          }
       }
 
-      public void rollback()
-      {
-         if (!previousFakeClasses.isEmpty()) {
-            discardFakeInstancesExceptPreviousOnes(previousFakeClasses);
+      public void rollback() {
+         if (previousFakeClasses.isEmpty()) {
+            discardAllFakeInstances();
          }
          else {
-            discardAllFakeInstances();
+            discardFakeInstancesExceptPreviousOnes(previousFakeClasses);
          }
       }
    }

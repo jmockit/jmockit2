@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="jmockit" basedir=".">
+
+   <target name="createJavadocs">
+      <property name="api" value="../jmockit.github.io/api2x"/>
+      <delete dir="${api}" includes="**/*.html" excludes="overview.html" quiet="true"/>
+      <delete dir="${api}/resources" includes="*.gif" quiet="true"/>
+      <delete file="${api}/stylesheet.css"/>
+      <javadoc
+         destdir="${api}" overview="${api}/overview.html"
+         classpath="target/classes"
+         nodeprecated="true" noindex="true" notree="true" nohelp="true" breakiterator="yes"
+         windowtitle="JMockit 2 API"
+         encoding="UTF-8" charset="UTF-8" locale="en">
+         <arg line="-notimestamp -quiet -Xdoclint:none"/>
+         <fileset dir="${basedir}/src">
+            <include name="org/jmockit/*.java"/>
+         </fileset>
+         <link href="http://docs.oracle.com/javase/8/docs/api/" offline="true" packagelistloc="${api}/javase"/>
+         <link href="http://docs.oracle.com/javaee/7/api/"      offline="true" packagelistloc="${api}/javaee"/>
+         <doctitle><![CDATA[
+            <a href="http://jmockit.org" target="_top"><img src="resources/logo.png" style="vertical-align:middle">
+               JMockit 2</a>
+            - API Documentation
+         ]]></doctitle>
+         <header><![CDATA[
+            <a href="http://jmockit.org" target="_top">
+               <img src="resources/logo.png" style="padding:4px;vertical-align:middle">JMockit Home</a>
+         ]]></header>
+         <footer><![CDATA[
+            <a href="http://jmockit.org" target="_top">
+               <img src="resources/logo.png" style="padding:4px;vertical-align:middle">JMockit Home</a>
+         ]]></footer>
+      </javadoc>
+      <delete file="${api}/constant-values.html"/>
+      <replace dir="${api}/org/jmockit" includes="*.html" token="resources/logo.png" value="../resources/logo.png"/>
+      <replace dir="${api}" includes="*.html">
+         <replacetoken><![CDATA[</head>]]></replacetoken>
+         <replacevalue><![CDATA[<link rel="shortcut icon" type="image/x-icon" href="resources/favicon.ico">
+</head>]]></replacevalue>
+      </replace>
+      <replace dir="${api}/org/jmockit" includes="*.html">
+         <replacetoken><![CDATA[</head>]]></replacetoken>
+         <replacevalue><![CDATA[<link rel="shortcut icon" type="image/x-icon" href="../resources/favicon.ico">
+</head>]]></replacevalue>
+      </replace>
+   </target>
+
+   <target name="createJar">
+      <delete file="jmockit.jar"/>
+      <jar destfile="jmockit.jar">
+         <fileset dir="target/classes" includes="org/jmockit/**/*.class"/>
+         <manifest>
+            <attribute name="Premain-Class" value="org.jmockit.internal.startup.Startup"/>
+            <attribute name="Can-Redefine-Classes" value="true"/>
+            <attribute name="Can-Retransform-Classes" value="true"/>
+         </manifest>
+      </jar>
+   </target>
+</project>

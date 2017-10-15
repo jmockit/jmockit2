@@ -12,7 +12,6 @@ final class ArgumentMatching
       "any anyString anyInt anyBoolean anyLong anyDouble anyFloat anyChar anyShort anyByte";
    private static final String WITH_METHODS =
       "withArgThat(Lorg/hamcrest/Matcher;)Ljava/lang/Object; " +
-      "with(Lmockit/Delegate;)Ljava/lang/Object; " +
       "withAny(Ljava/lang/Object;)Ljava/lang/Object; " +
       "withCapture()Ljava/lang/Object; withCapture(Ljava/util/List;)Ljava/lang/Object; " +
       "withCapture(Ljava/lang/Object;)Ljava/util/List; " +
@@ -34,18 +33,15 @@ final class ArgumentMatching
    @Nonnegative private int matcherCount;
    @Nonnull private Type[] parameterTypes;
 
-   static boolean isAnyField(@Nonnull String name)
-   {
+   static boolean isAnyField(@Nonnull String name) {
       return name.startsWith("any") && ANY_FIELDS.contains(name);
    }
 
-   static boolean isCallToArgumentMatcher(@Nonnull String name, @Nonnull String desc)
-   {
+   static boolean isCallToArgumentMatcher(@Nonnull String name, @Nonnull String desc) {
       return name.startsWith("with") && WITH_METHODS.contains(name + desc);
    }
 
-   ArgumentMatching(@Nonnull InvocationBlockModifier modifier)
-   {
+   ArgumentMatching(@Nonnull InvocationBlockModifier modifier) {
       this.modifier = modifier;
       matcherStacks = new int[40];
       parameterTypes = NO_PARAMETERS;
@@ -57,15 +53,14 @@ final class ArgumentMatching
    @Nonnull Type getParameterType(@Nonnegative int parameterIndex) { return parameterTypes[parameterIndex]; }
 
    void generateCodeToAddArgumentMatcherForAnyField(
-      @Nonnull String fieldOwner, @Nonnull String name, @Nonnull String desc)
-   {
+      @Nonnull String fieldOwner, @Nonnull String name, @Nonnull String desc
+   ) {
       MethodWriter mw = modifier.getMethodWriter();
       mw.visitFieldInsn(GETFIELD, fieldOwner, name, desc);
       modifier.generateCallToActiveInvocationsMethod(name);
    }
 
-   boolean handleInvocationParameters(@Nonnegative int stackSize, @Nonnull String desc)
-   {
+   boolean handleInvocationParameters(@Nonnegative int stackSize, @Nonnull String desc) {
       parameterTypes = Type.getArgumentTypes(desc);
       int stackAfter = stackSize - getSumOfParameterSizes();
       boolean mockedInvocationUsingTheMatchers = stackAfter < matcherStacks[0];
@@ -80,8 +75,7 @@ final class ArgumentMatching
    }
 
    @Nonnegative
-   private int getSumOfParameterSizes()
-   {
+   private int getSumOfParameterSizes() {
       @Nonnegative int sum = 0;
 
       for (Type argType : parameterTypes) {
@@ -91,8 +85,7 @@ final class ArgumentMatching
       return sum;
    }
 
-   private void generateCallsToMoveArgMatchers(@Nonnegative int initialStack)
-   {
+   private void generateCallsToMoveArgMatchers(@Nonnegative int initialStack) {
       @Nonnegative int stack = initialStack;
       @Nonnegative int nextMatcher = 0;
       @Nonnegative int matcherStack = matcherStacks[0];
@@ -111,8 +104,7 @@ final class ArgumentMatching
       }
    }
 
-   private void generateCallToMoveArgMatcher(@Nonnegative int originalMatcherIndex, @Nonnegative int toIndex)
-   {
+   private void generateCallToMoveArgMatcher(@Nonnegative int originalMatcherIndex, @Nonnegative int toIndex) {
       MethodWriter mw = modifier.getMethodWriter();
       mw.visitIntInsn(SIPUSH, originalMatcherIndex);
       mw.visitIntInsn(SIPUSH, toIndex);

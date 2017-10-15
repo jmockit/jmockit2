@@ -1,4 +1,4 @@
-/***
+/*
  * ASM: a very small and fast Java bytecode manipulation framework
  * Copyright (c) 2000-2011 INRIA, France Telecom
  * All rights reserved.
@@ -346,13 +346,13 @@ public abstract class MethodVisitor {
      *            the opcode of the local variable instruction to be visited.
      *            This opcode is either ILOAD, LLOAD, FLOAD, DLOAD, ALOAD,
      *            ISTORE, LSTORE, FSTORE, DSTORE, ASTORE or RET.
-     * @param var
+     * @param varIndex
      *            the operand of the instruction to be visited. This operand is
      *            the index of a local variable.
      */
-    public void visitVarInsn(int opcode, int var) {
+    public void visitVarInsn(int opcode, int varIndex) {
         if (mv != null) {
-            mv.visitVarInsn(opcode, var);
+            mv.visitVarInsn(opcode, varIndex);
         }
     }
 

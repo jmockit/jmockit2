@@ -17,20 +17,19 @@ import javax.annotation.*;
  */
 public final class RunNotifierDecorator extends Fake<RunNotifier>
 {
-   public static void fireTestRunStarted(Invocation invocation, Description description)
-   {
+   @SuppressWarnings("unused")
+   public static void fireTestRunStarted(Invocation invocation, Description description) {
       RunNotifier it = invocation.getInvokedInstance();
       prepareToProceed(invocation);
       it.fireTestRunStarted(description);
    }
 
-   private static void prepareToProceed(@Nonnull Invocation invocation)
-   {
+   private static void prepareToProceed(@Nonnull Invocation invocation) {
       ((FakeInvocation) invocation).prepareToProceedFromNonRecursiveMock();
    }
 
-   public void fireTestStarted(Invocation invocation, Description description)
-   {
+   @SuppressWarnings("unused")
+   public static void fireTestStarted(Invocation invocation, Description description) {
       Class<?> currentTestClass = TestRun.getCurrentTestClass();
 
       if (currentTestClass != null) {
@@ -47,8 +46,8 @@ public final class RunNotifierDecorator extends Fake<RunNotifier>
       it.fireTestStarted(description);
    }
 
-   public static void fireTestRunFinished(Invocation invocation, Result result)
-   {
+   @SuppressWarnings("unused")
+   public static void fireTestRunFinished(Invocation invocation, Result result) {
       TestRun.enterNoMockingZone();
 
       try {

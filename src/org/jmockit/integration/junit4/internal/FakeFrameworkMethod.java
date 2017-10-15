@@ -19,21 +19,18 @@ import java.util.*;
  */
 public final class FakeFrameworkMethod extends Fake<FrameworkMethod>
 {
-   public static boolean hasDependenciesInClasspath()
-   {
-      return ClassLoad.searchTypeInClasspath("org.junit.runners.model.FrameworkMethod", true) != null;
-   }
-
    @Nonnull private final JUnit4TestRunnerDecorator decorator = new JUnit4TestRunnerDecorator();
 
+   @SuppressWarnings("unused")
    @Nullable
-   public Object invokeExplosively(@Nonnull Invocation invocation, Object target, Object... params) throws Throwable
-   {
+   public Object invokeExplosively(@Nonnull Invocation invocation, Object target, Object... params) throws Throwable {
       return decorator.invokeExplosively((FakeInvocation) invocation, target, params);
    }
 
-   public static void validatePublicVoidNoArg(@Nonnull Invocation invocation, boolean isStatic, List<Throwable> errors)
-   {
+   @SuppressWarnings("unused")
+   public static void validatePublicVoidNoArg(
+       @Nonnull Invocation invocation, boolean isStatic, @Nonnull List<Throwable> errors
+   ) {
       FrameworkMethod it = invocation.getInvokedInstance();
       int previousErrorCount = errors.size();
 
@@ -53,8 +50,7 @@ public final class FakeFrameworkMethod extends Fake<FrameworkMethod>
       }
    }
 
-   private static boolean eachParameterContainsAKnownAnnotation(@Nonnull Annotation[][] parametersAndTheirAnnotations)
-   {
+   private static boolean eachParameterContainsAKnownAnnotation(@Nonnull Annotation[][] parametersAndTheirAnnotations) {
       if (parametersAndTheirAnnotations.length == 0) {
          return false;
       }
@@ -68,8 +64,7 @@ public final class FakeFrameworkMethod extends Fake<FrameworkMethod>
       return true;
    }
 
-   private static boolean containsAKnownAnnotation(@Nonnull Annotation[] parameterAnnotations)
-   {
+   private static boolean containsAKnownAnnotation(@Nonnull Annotation[] parameterAnnotations) {
       if (parameterAnnotations.length == 0) {
          return false;
       }
@@ -77,7 +72,7 @@ public final class FakeFrameworkMethod extends Fake<FrameworkMethod>
       for (Annotation parameterAnnotation : parameterAnnotations) {
          String annotationTypeName = parameterAnnotation.annotationType().getName();
 
-         if (!"mockit.Tested mockit.Mocked mockit.Injectable mockit.Capturing".contains(annotationTypeName)) {
+         if (!"org.jmockit.Tested org.jmockit.Mocked".contains(annotationTypeName)) {
             return false;
          }
       }

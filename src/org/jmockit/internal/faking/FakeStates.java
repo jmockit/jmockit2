@@ -21,28 +21,24 @@ public final class FakeStates
    @Nonnull private final Map<Object, List<FakeState>> fakesToFakeStates;
    @Nonnull private final Map<Object, List<FakeState>> startupFakesToFakeStates;
 
-   public FakeStates()
-   {
-      startupFakesToFakeStates = new IdentityHashMap<Object, List<FakeState>>(2);
-      fakesToFakeStates = new IdentityHashMap<Object, List<FakeState>>(8);
+   FakeStates() {
+      startupFakesToFakeStates = new IdentityHashMap<>(2);
+      fakesToFakeStates = new IdentityHashMap<>(8);
    }
 
-   void addStartupFakeAndItsFakeStates(@Nonnull Object fake, @Nonnull List<FakeState> fakeStates)
-   {
+   void addStartupFakeAndItsFakeStates(@Nonnull Object fake, @Nonnull List<FakeState> fakeStates) {
       startupFakesToFakeStates.put(fake, fakeStates);
    }
 
-   void addFakeAndItsFakeStates(@Nonnull Object fake, @Nonnull List<FakeState> fakeStates)
-   {
+   void addFakeAndItsFakeStates(@Nonnull Object fake, @Nonnull List<FakeState> fakeStates) {
       fakesToFakeStates.put(fake, fakeStates);
    }
 
-   public void copyFakeStates(@Nonnull Object previousFake, @Nonnull Object newFake)
-   {
+   void copyFakeStates(@Nonnull Object previousFake, @Nonnull Object newFake) {
       List<FakeState> fakeStates = fakesToFakeStates.get(previousFake);
 
       if (fakeStates != null) {
-         List<FakeState> copiedFakeStates = new ArrayList<FakeState>(fakeStates.size());
+         List<FakeState> copiedFakeStates = new ArrayList<>(fakeStates.size());
 
          for (FakeState fakeState : fakeStates) {
             copiedFakeStates.add(new FakeState(fakeState));
@@ -52,8 +48,9 @@ public final class FakeStates
       }
    }
 
-   public void removeClassState(@Nonnull Class<?> redefinedClass, @Nullable String internalNameForOneOrMoreFakeClasses)
-   {
+   public void removeClassState(
+       @Nonnull Class<?> redefinedClass, @Nullable String internalNameForOneOrMoreFakeClasses
+   ) {
       removeFakeStates(redefinedClass);
 
       if (internalNameForOneOrMoreFakeClasses != null) {
@@ -70,8 +67,7 @@ public final class FakeStates
       }
    }
 
-   private void removeFakeStates(@Nonnull Class<?> redefinedClass)
-   {
+   private void removeFakeStates(@Nonnull Class<?> redefinedClass) {
       Iterator<List<FakeState>> itr = fakesToFakeStates.values().iterator();
 
       while (itr.hasNext()) {
@@ -85,8 +81,7 @@ public final class FakeStates
       }
    }
 
-   private void removeFakeStates(@Nonnull String fakeClassInternalName)
-   {
+   private void removeFakeStates(@Nonnull String fakeClassInternalName) {
       Class<?> fakeClass = ClassLoad.loadClass(fakeClassInternalName.replace('/', '.'));
       Iterator<Entry<Object, List<FakeState>>> itr = fakesToFakeStates.entrySet().iterator();
 
@@ -100,15 +95,13 @@ public final class FakeStates
       }
    }
 
-   public boolean updateFakeState(@Nonnull Object fake, int fakeStateIndex)
-   {
+   public boolean updateFakeState(@Nonnull Object fake, int fakeStateIndex) {
       FakeState fakeState = getFakeState(fake, fakeStateIndex);
       return fakeState.update();
    }
 
    @Nonnull
-   FakeState getFakeState(@Nonnull Object fake, int fakeStateIndex)
-   {
+   FakeState getFakeState(@Nonnull Object fake, int fakeStateIndex) {
       List<FakeState> fakeStates = startupFakesToFakeStates.get(fake);
 
       if (fakeStates == null) {

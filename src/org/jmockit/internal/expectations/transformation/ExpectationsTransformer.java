@@ -16,22 +16,17 @@ public final class ExpectationsTransformer implements ClassFileTransformer
 {
    @Nonnull private final List<String> baseSubclasses;
 
-   public ExpectationsTransformer(@Nonnull Instrumentation instrumentation)
-   {
+   public ExpectationsTransformer(@Nonnull Instrumentation instrumentation) {
       baseSubclasses = new ArrayList<>();
-      baseSubclasses.add("mockit/Expectations");
-      baseSubclasses.add("mockit/Verifications");
-      baseSubclasses.add("mockit/FullVerifications");
-      baseSubclasses.add("mockit/VerificationsInOrder");
-      baseSubclasses.add("mockit/FullVerificationsInOrder");
+      baseSubclasses.add("org/jmockit/Expectations");
+      baseSubclasses.add("org/jmockit/Verifications");
 
       Class<?>[] alreadyLoaded = instrumentation.getAllLoadedClasses();
       findAndModifyOtherBaseSubclasses(alreadyLoaded);
       modifyFinalSubclasses(alreadyLoaded);
    }
 
-   private void findAndModifyOtherBaseSubclasses(@Nonnull Class<?>[] alreadyLoaded)
-   {
+   private void findAndModifyOtherBaseSubclasses(@Nonnull Class<?>[] alreadyLoaded) {
       for (Class<?> aClass : alreadyLoaded) {
          if (
             aClass.getClassLoader() != null && !isFinalClass(aClass) &&
@@ -42,13 +37,11 @@ public final class ExpectationsTransformer implements ClassFileTransformer
       }
    }
 
-   private static boolean isFinalClass(@Nonnull Class<?> aClass)
-   {
+   private static boolean isFinalClass(@Nonnull Class<?> aClass) {
       return isFinal(aClass.getModifiers()) || ClassNaming.isAnonymousClass(aClass);
    }
 
-   private static boolean isExpectationsOrVerificationsSubclassFromUserCode(@Nonnull Class<?> aClass)
-   {
+   private static boolean isExpectationsOrVerificationsSubclassFromUserCode(@Nonnull Class<?> aClass) {
       if (isExpectationsOrVerificationsAPIClass(aClass)) {
          return false;
       }
@@ -66,15 +59,11 @@ public final class ExpectationsTransformer implements ClassFileTransformer
       return false;
    }
 
-   private static boolean isExpectationsOrVerificationsAPIClass(@Nonnull Class<?> aClass)
-   {
-      return
-         ("mockit.Expectations mockit.Verifications mockit.FullVerifications mockit.VerificationsInOrder " +
-          "mockit.FullVerificationsInOrder").contains(aClass.getName());
+   private static boolean isExpectationsOrVerificationsAPIClass(@Nonnull Class<?> aClass) {
+      return "org.jmockit.Expectations org.jmockit.Verifications".contains(aClass.getName());
    }
 
-   private void modifyFinalSubclasses(@Nonnull Class<?>[] alreadyLoaded)
-   {
+   private void modifyFinalSubclasses(@Nonnull Class<?>[] alreadyLoaded) {
       for (Class<?> aClass : alreadyLoaded) {
          if (
             aClass.getClassLoader() != null && isFinalClass(aClass) &&
@@ -85,8 +74,7 @@ public final class ExpectationsTransformer implements ClassFileTransformer
       }
    }
 
-   private void modifyInvocationsSubclass(@Nonnull Class<?> aClass, boolean isFinalClass)
-   {
+   private void modifyInvocationsSubclass(@Nonnull Class<?> aClass, boolean isFinalClass) {
       ClassReader cr = ClassFile.createClassFileReader(aClass);
       byte[] modifiedClassfile = modifyInvocationsSubclass(cr, aClass.getClassLoader(), isFinalClass);
 
@@ -96,8 +84,7 @@ public final class ExpectationsTransformer implements ClassFileTransformer
    }
 
    @Nullable
-   private byte[] modifyInvocationsSubclass(@Nonnull ClassReader cr, ClassLoader loader, boolean finalClass)
-   {
+   private byte[] modifyInvocationsSubclass(@Nonnull ClassReader cr, ClassLoader loader, boolean finalClass) {
       ClassVisitor modifier = new EndOfBlockModifier(cr, loader, baseSubclasses, finalClass);
 
       try {
@@ -113,8 +100,8 @@ public final class ExpectationsTransformer implements ClassFileTransformer
    @Nullable @Override
    public byte[] transform(
       @Nullable ClassLoader loader, @Nonnull String className, @Nullable Class<?> classBeingRedefined,
-      @Nullable ProtectionDomain protectionDomain, @Nonnull byte[] classfileBuffer)
-   {
+      @Nullable ProtectionDomain protectionDomain, @Nonnull byte[] classfileBuffer
+   ) {
       if (classBeingRedefined == null && protectionDomain != null) {
          ClassReader cr = new ClassReader(classfileBuffer);
          String superClassName = cr.getSuperName();

@@ -6,7 +6,6 @@ import org.jmockit.internal.reflection.*;
 import org.jmockit.internal.util.*;
 
 import javax.annotation.*;
-import java.lang.instrument.*;
 import java.util.*;
 
 final class JMockitInitialization
@@ -15,16 +14,14 @@ final class JMockitInitialization
 
    JMockitInitialization() { config = new StartupConfiguration(); }
 
-   void initialize(@Nonnull Instrumentation inst)
-   {
+   void initialize() {
       preventEventualClassLoadingConflicts();
       applyInternalStartupFakesAsNeeded();
       applyUserSpecifiedStartupFakesIfAny();
    }
 
    @SuppressWarnings("ResultOfMethodCallIgnored")
-   private static void preventEventualClassLoadingConflicts()
-   {
+   private static void preventEventualClassLoadingConflicts() {
       // Ensure the proper loading of data files by the JRE, whose names depend on calls to the System class,
       // which may get @Mocked.
       TimeZone.getDefault();
@@ -35,23 +32,23 @@ final class JMockitInitialization
       Utilities.calledFromSpecialThread();
    }
 
-   private void applyInternalStartupFakesAsNeeded()
-   {
-      if (FakeFrameworkMethod.hasDependenciesInClasspath()) {
+   private static void applyInternalStartupFakesAsNeeded() {
+      boolean junit4DependenciesInClasspath =
+          ClassLoad.searchTypeInClasspath("org.junit.runners.model.FrameworkMethod", true) != null;
+
+      if (junit4DependenciesInClasspath) {
          new RunNotifierDecorator();
          new FakeFrameworkMethod();
       }
    }
 
-   private void applyUserSpecifiedStartupFakesIfAny()
-   {
+   private void applyUserSpecifiedStartupFakesIfAny() {
       for (String fakeClassName : config.fakeClasses) {
          applyStartupFake(fakeClassName);
       }
    }
 
-   private static void applyStartupFake(@Nonnull String fakeClassName)
-   {
+   private static void applyStartupFake(@Nonnull String fakeClassName) {
       String argument = null;
       int p = fakeClassName.indexOf('=');
 

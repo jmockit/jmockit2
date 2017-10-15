@@ -104,7 +104,7 @@
                <quiet>true</quiet>
                <sourcepath>${basedir}/src</sourcepath>
                <subpackages>none</subpackages>
-               <additionalparam>-Xdoclint:none org.jmockit org.jmockit.integration.junit4</additionalparam>
+               <additionalparam>-Xdoclint:none org.jmockit</additionalparam>
                <links>
                   <link>http://docs.oracle.com/javase/8/docs/api/</link>
                   <link>http://docs.oracle.com/javaee/7/api/</link>

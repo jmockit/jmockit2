@@ -14,7 +14,9 @@ import java.lang.instrument.*;
  */
 public final class Startup
 {
+   private static Instrumentation instrumentation;
    public static boolean initializing;
+   public static String hostJREClassName;
 
    private Startup() {}
 
@@ -28,63 +30,41 @@ public final class Startup
     * @param agentArgs not used
     * @param inst      the instrumentation service provided by the JVM
     */
-   public static void premain(@Nullable String agentArgs, @Nonnull Instrumentation inst)
-   {
-      String hostJREClassName = ClassLoadingBridgeFields.createSyntheticFieldsInJREClassToHoldClassLoadingBridges(inst);
-      Instrumentation wrappedInst = InstrumentationHolder.set(inst, hostJREClassName);
-      initialize(wrappedInst);
-   }
-
-   private static void initialize(@Nonnull Instrumentation inst)
-   {
+   public static void premain(@Nullable String agentArgs, @Nonnull Instrumentation inst) {
+      instrumentation = inst;
+      hostJREClassName = ClassLoadingBridgeFields.createSyntheticFieldsInJREClassToHoldClassLoadingBridges(inst);
       inst.addTransformer(CachedClassfiles.INSTANCE, true);
-      applyStartupFakes(inst);
+      applyStartupFakes();
       inst.addTransformer(new ExpectationsTransformer(inst));
    }
 
-   private static void applyStartupFakes(@Nonnull Instrumentation inst)
-   {
+   private static void applyStartupFakes() {
       initializing = true;
 
       try {
-         new JMockitInitialization().initialize(inst);
+         new JMockitInitialization().initialize();
       }
       finally {
          initializing = false;
       }
    }
 
-   @Nonnull
-   public static Instrumentation instrumentation()
-   {
-      verifyInitialization();
-      return InstrumentationHolder.get();
+   public static void retransformClass(@Nonnull Class<?> aClass) {
+      try { instrumentation.retransformClasses(aClass); } catch (UnmodifiableClassException ignore) {}
    }
 
-   public static void verifyInitialization()
-   {
-   }
-
-   public static void retransformClass(@Nonnull Class<?> aClass)
-   {
-      try { instrumentation().retransformClasses(aClass); } catch (UnmodifiableClassException ignore) {}
-   }
-
-   public static void redefineMethods(@Nonnull ClassIdentification classToRedefine, @Nonnull byte[] modifiedClassfile)
-   {
+   public static void redefineMethods(@Nonnull ClassIdentification classToRedefine, @Nonnull byte[] modifiedClassfile) {
       Class<?> loadedClass = classToRedefine.getLoadedClass();
       redefineMethods(loadedClass, modifiedClassfile);
    }
 
-   public static void redefineMethods(@Nonnull Class<?> classToRedefine, @Nonnull byte[] modifiedClassfile)
-   {
+   public static void redefineMethods(@Nonnull Class<?> classToRedefine, @Nonnull byte[] modifiedClassfile) {
       redefineMethods(new ClassDefinition(classToRedefine, modifiedClassfile));
    }
 
-   public static void redefineMethods(@Nonnull ClassDefinition... classDefs)
-   {
+   public static void redefineMethods(@Nonnull ClassDefinition... classDefs) {
       try {
-         instrumentation().redefineClasses(classDefs);
+         instrumentation.redefineClasses(classDefs);
       }
       catch (ClassNotFoundException | UnmodifiableClassException e) {
          // should never happen
@@ -102,8 +82,7 @@ public final class Startup
       }
    }
 
-   private static void detectMissingDependenciesIfAny(@Nonnull Class<?> mockedClass)
-   {
+   private static void detectMissingDependenciesIfAny(@Nonnull Class<?> mockedClass) {
       try {
          Class.forName(mockedClass.getName(), false, mockedClass.getClassLoader());
       }
@@ -116,17 +95,12 @@ public final class Startup
    }
 
    @Nullable
-   public static Class<?> getClassIfLoaded(@Nonnull String classDescOrName)
-   {
-      Instrumentation instrumentation = InstrumentationHolder.get();
+   public static Class<?> getClassIfLoaded(@Nonnull String classDescOrName) {
+      String className = classDescOrName.replace('/', '.');
 
-      if (instrumentation != null) {
-         String className = classDescOrName.replace('/', '.');
-
-         for (Class<?> aClass : instrumentation.getAllLoadedClasses()) {
-            if (aClass.getName().equals(className)) {
-               return aClass;
-            }
+      for (Class<?> aClass : instrumentation.getAllLoadedClasses()) {
+         if (aClass.getName().equals(className)) {
+            return aClass;
          }
       }
 
