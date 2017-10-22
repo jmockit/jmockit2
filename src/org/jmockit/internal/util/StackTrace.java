@@ -11,8 +11,7 @@ public final class StackTrace
    @Nonnull private final Throwable throwable;
    @Nonnull private StackTraceElement[] elements;
 
-   public StackTrace(@Nonnull Throwable throwable)
-   {
+   public StackTrace(@Nonnull Throwable throwable) {
       this.throwable = throwable;
       elements = throwable.getStackTrace();
    }
@@ -22,13 +21,11 @@ public final class StackTrace
    @Nonnull
    public StackTraceElement getElement(int index) { return elements[index]; }
 
-   public static void filterStackTrace(@Nonnull Throwable t)
-   {
+   public static void filterStackTrace(@Nonnull Throwable t) {
       new StackTrace(t).filter();
    }
 
-   public void filter()
-   {
+   public void filter() {
       StackTraceElement[] filteredST = new StackTraceElement[elements.length];
       int i = 0;
 
@@ -36,7 +33,7 @@ public final class StackTrace
          if (ste.getFileName() != null) {
             String where = ste.getClassName();
 
-            if (!isJDKInternalMethod(ste) && !isTestFrameworkMethod(where) && !isJMockitMethod(where)) {
+            if (!jdkOr3rdPartyLibraryInternalMethod(ste) && !testFrameworkMethod(where) && !jmockitMethod(where)) {
                filteredST[i] = ste;
                i++;
             }
@@ -55,7 +52,7 @@ public final class StackTrace
       }
    }
 
-   private static boolean isJDKInternalMethod(@Nonnull StackTraceElement ste)
+   private static boolean jdkOr3rdPartyLibraryInternalMethod(@Nonnull StackTraceElement ste)
    {
       String className = ste.getClassName();
 
@@ -64,18 +61,17 @@ public final class StackTrace
          className.startsWith("jdk.") || className.startsWith("java.util.") ||
          className.contains(".reflect.") ||
          className.contains(".surefire.") ||
+          className.contains(".gradle.") ||
          className.contains(".intellij.") ||
          className.contains(".jdt.");
    }
 
-   private static boolean isTestFrameworkMethod(@Nonnull String where)
-   {
+   private static boolean testFrameworkMethod(@Nonnull String where) {
       return where.startsWith("org.junit.") || where.startsWith("org.testng.");
    }
 
-   private static boolean isJMockitMethod(@Nonnull String where)
-   {
-      if (!where.startsWith("mockit.")) {
+   private static boolean jmockitMethod(@Nonnull String where) {
+      if (!where.startsWith("org.jmockit.")) {
          return false;
       }
 
@@ -96,8 +92,7 @@ public final class StackTrace
       return q < where.length() && where.charAt(q) != '$';
    }
 
-   public void print(@Nonnull Appendable output)
-   {
+   public void print(@Nonnull Appendable output) {
       String previousFileName = null;
       int previousLineNumber = 0;
       String sep = "";
