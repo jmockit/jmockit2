@@ -13,8 +13,8 @@ final class TestedParameter extends TestedObject
 
    TestedParameter(
       @Nonnull InjectionState injectionState, @Nonnull TestMethod testMethod, @Nonnegative int parameterIndex,
-      @Nonnull Tested metadata)
-   {
+      @Nonnull Tested metadata
+   ) {
       super(
          injectionState, metadata, ParameterNames.getName(testMethod, parameterIndex),
          testMethod.getParameterType(parameterIndex), testMethod.getParameterClass(parameterIndex));
@@ -23,8 +23,7 @@ final class TestedParameter extends TestedObject
    }
 
    @Nullable @Override
-   Object getExistingTestedInstanceIfApplicable(@Nonnull Object testClassInstance)
-   {
+   Object getExistingTestedInstanceIfApplicable(@Nonnull Object testClassInstance) {
       Object testedObject = null;
 
       if (!createAutomatically) {
@@ -46,8 +45,7 @@ final class TestedParameter extends TestedObject
    }
 
    @Override
-   void setInstance(@Nonnull Object testClassInstance, @Nullable Object testedInstance)
-   {
+   void setInstance(@Nonnull Object testClassInstance, @Nullable Object testedInstance) {
       testMethod.setParameterValue(parameterIndex, testedInstance);
    }
 }

@@ -9,7 +9,12 @@ public final class TestedObjectsTest
 {
     @Tested ClassToBeTested cut;
 
-//    @Test
+    @Tested
+    Class<?> resolveDependencyInterfaces(Class<? extends AnotherDependency> dependencyType) {
+        return AnotherDependencyImpl.class;
+    }
+
+    @Test
     public void createCUTUsingNoArgsConstructorWithFieldInjectedDependency() {
         assertNotNull(cut);
         assertNotNull(cut.dependency);
@@ -20,5 +25,10 @@ public final class TestedObjectsTest
         assertEquals("testing", text);
         assertEquals(text, cut.text);
         assertNotNull(cut.dependency);
+    }
+
+    @Test
+    public void declareTestedParameterOfPrimitiveType(@Tested("123") int value) {
+        assertEquals(123, value);
     }
 }
