@@ -1,6 +1,7 @@
 package org.jmockit.internal.expectations;
 
 import static java.lang.reflect.Modifier.*;
+import org.jmockit.*;
 import org.jmockit.internal.expectations.invocation.*;
 import org.jmockit.internal.expectations.mocking.*;
 import org.jmockit.internal.expectations.state.*;
@@ -32,41 +33,39 @@ public final class RecordAndReplayExecution
       replayPhase = new ReplayPhase(this);
    }
 
-//   public RecordAndReplayExecution(
-//      @Nonnull Expectations targetObject, @Nullable Object... classesOrInstancesToBePartiallyMocked)
-//   {
-//      TestRun.enterNoMockingZone();
-//      ExecutingTest executingTest = TestRun.getExecutingTest();
-//      executingTest.setShouldIgnoreMockingCallbacks(true);
-//
-//      try {
-//         RecordAndReplayExecution previous = executingTest.getPreviousRecordAndReplay();
-//
-//         if (previous == null) {
-//            executionState = new PhasedExecutionState();
-//         }
-//         else {
-//            executionState = previous.executionState;
-//         }
-//
-//         failureState = new FailureState();
-//         recordPhase = new RecordPhase(this);
-//
-//         executingTest.setRecordAndReplay(this);
+   public RecordAndReplayExecution(@Nonnull Expectations targetObject)
+   {
+      ExecutingTest executingTest = TestRun.getExecutingTest();
+      executingTest.setShouldIgnoreMockingCallbacks(true);
+
+      try {
+         RecordAndReplayExecution previous = executingTest.getPreviousRecordAndReplay();
+
+         if (previous == null) {
+            executionState = new PhasedExecutionState();
+         }
+         else {
+            executionState = previous.executionState;
+         }
+
+         failureState = new FailureState();
+         recordPhase = new RecordPhase(this);
+
+         executingTest.setRecordAndReplay(this);
 //         discoverMockedTypesAndInstancesForMatchingOnInstance();
 //
-//         //noinspection LockAcquiredButNotSafelyReleased
-//         TEST_ONLY_PHASE_LOCK.lock();
-//      }
-//      catch (RuntimeException e) {
-//         executingTest.setRecordAndReplay(null);
-//         throw e;
-//      }
-//      finally {
-//         executingTest.setShouldIgnoreMockingCallbacks(false);
-//         TestRun.exitNoMockingZone();
-//      }
-//   }
+         //noinspection LockAcquiredButNotSafelyReleased
+         TEST_ONLY_PHASE_LOCK.lock();
+      }
+      catch (RuntimeException e) {
+         executingTest.setRecordAndReplay(null);
+         throw e;
+      }
+      finally {
+         executingTest.setShouldIgnoreMockingCallbacks(false);
+         TestRun.exitNoMockingZone();
+      }
+   }
 
 //   private void discoverMockedTypesAndInstancesForMatchingOnInstance()
 //   {

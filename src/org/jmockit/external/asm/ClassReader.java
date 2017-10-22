@@ -69,16 +69,6 @@ public final class ClassReader {
     public static final int SKIP_FRAMES = 4;
 
     /**
-     * Flag to expand the stack map frames. By default stack map frames are
-     * visited in their original format (i.e. "expanded" for classes whose
-     * version is less than V1_6, and "compressed" for the other classes). If
-     * this flag is set, stack map frames are always visited in expanded format
-     * (this option adds a decompression/recompression step in ClassReader and
-     * ClassWriter which degrades performances quite a lot).
-     */
-    public static final int EXPAND_FRAMES = 8;
-
-    /**
      * The class to be parsed. <i>The content of this array must not be
      * modified. This field is intended for {@link Attribute} sub classes, and
      * is normally not needed by class generators or adapters.</i>
@@ -113,15 +103,10 @@ public final class ClassReader {
      */
     private final int header;
 
-    // ------------------------------------------------------------------------
-    // Constructors
-    // ------------------------------------------------------------------------
-
     /**
      * Constructs a new {@link ClassReader} object.
      * 
-     * @param b
-     *            the bytecode of the class to be read.
+     * @param b the bytecode of the class to be read.
      */
     public ClassReader(byte[] b) {
         this.b = b;
@@ -132,9 +117,11 @@ public final class ClassReader {
         strings = new String[n];
         int max = 0;
         int index = 10;
+
         for (int i = 1; i < n; ++i) {
             items[i] = index + 1;
             int size;
+
             switch (b[index]) {
             case ClassWriter.FIELD:
             case ClassWriter.METH:
@@ -166,8 +153,10 @@ public final class ClassReader {
                 size = 3;
                 break;
             }
+
             index += size;
         }
+
         maxStringLength = max;
         // the class header information starts just after the constant pool
         header = index;
@@ -225,39 +214,42 @@ public final class ClassReader {
         int index = header + 6;
         int n = readUnsignedShort(index);
         String[] interfaces = new String[n];
+
         if (n > 0) {
             char[] buf = new char[maxStringLength];
+
             for (int i = 0; i < n; ++i) {
                 index += 2;
                 interfaces[i] = readClass(index, buf);
             }
         }
+
         return interfaces;
     }
 
     /**
-     * Copies the constant pool data into the given {@link ClassWriter}. Should
-     * be called before the {@link #accept(ClassVisitor,int)} method.
+     * Copies the constant pool data into the given {@link ClassWriter}.
+     * Should be called before the {@link #accept(ClassVisitor,int)} method.
      * 
-     * @param classWriter
-     *            the {@link ClassWriter} to copy constant pool into.
+     * @param classWriter the {@link ClassWriter} to copy constant pool into.
      */
     void copyPool(ClassWriter classWriter) {
         char[] buf = new char[maxStringLength];
         int ll = items.length;
         Item[] items2 = new Item[ll];
+
         for (int i = 1; i < ll; i++) {
             int index = items[i];
             int tag = b[index - 1];
             Item item = new Item(i);
             int nameType;
+
             switch (tag) {
             case ClassWriter.FIELD:
             case ClassWriter.METH:
             case ClassWriter.IMETH:
                 nameType = items[readUnsignedShort(index + 2)];
-                item.set(tag, readClass(index, buf), readUTF8(nameType, buf),
-                        readUTF8(nameType + 2, buf));
+                item.set(tag, readClass(index, buf), readUTF8(nameType, buf), readUTF8(nameType + 2, buf));
                 break;
             case ClassWriter.INT:
                 item.set(readInt(index));
@@ -266,8 +258,7 @@ public final class ClassReader {
                 item.set(Float.intBitsToFloat(readInt(index)));
                 break;
             case ClassWriter.NAME_TYPE:
-                item.set(tag, readUTF8(index, buf), readUTF8(index + 2, buf),
-                        null);
+                item.set(tag, readUTF8(index, buf), readUTF8(index + 2, buf), null);
                 break;
             case ClassWriter.LONG:
                 item.set(readLong(index));
@@ -279,29 +270,30 @@ public final class ClassReader {
                 break;
             case ClassWriter.UTF8: {
                 String s = strings[i];
+
                 if (s == null) {
                     index = items[i];
-                    s = strings[i] = readUTF(index + 2,
-                            readUnsignedShort(index), buf);
+                    s = strings[i] = readUTF(index + 2, readUnsignedShort(index), buf);
                 }
+
                 item.set(tag, s, null, null);
                 break;
             }
             case ClassWriter.HANDLE: {
                 int fieldOrMethodRef = items[readUnsignedShort(index + 1)];
                 nameType = items[readUnsignedShort(fieldOrMethodRef + 2)];
-                item.set(ClassWriter.HANDLE_BASE + readByte(index),
-                        readClass(fieldOrMethodRef, buf),
-                        readUTF8(nameType, buf), readUTF8(nameType + 2, buf));
+                item.set(
+                    ClassWriter.HANDLE_BASE + readByte(index), readClass(fieldOrMethodRef, buf),
+                    readUTF8(nameType, buf), readUTF8(nameType + 2, buf));
                 break;
             }
             case ClassWriter.INDY:
                 if (classWriter.bootstrapMethods == null) {
                     copyBootstrapMethods(classWriter, items2, buf);
                 }
+
                 nameType = items[readUnsignedShort(index + 2)];
-                item.set(readUTF8(nameType, buf), readUTF8(nameType + 2, buf),
-                        readUnsignedShort(index));
+                item.set(readUTF8(nameType, buf), readUTF8(nameType + 2, buf), readUnsignedShort(index));
                 break;
             // case ClassWriter.STR:
             // case ClassWriter.CLASS:
@@ -327,33 +319,40 @@ public final class ClassReader {
      * Copies the bootstrap method data into the given {@link ClassWriter}.
      * Should be called before the {@link #accept(ClassVisitor,int)} method.
      * 
-     * @param classWriter
-     *            the {@link ClassWriter} to copy bootstrap methods into.
+     * @param classWriter the {@link ClassWriter} to copy bootstrap methods into.
      */
     private void copyBootstrapMethods(ClassWriter classWriter, Item[] items, char[] c) {
         // finds the "BootstrapMethods" attribute
         int u = getAttributes();
         boolean found = false;
+
         for (int i = readUnsignedShort(u); i > 0; --i) {
             String attrName = readUTF8(u + 2, c);
+
             if ("BootstrapMethods".equals(attrName)) {
                 found = true;
                 break;
             }
+
             u += 6 + readInt(u + 4);
         }
+
         if (!found) {
             return;
         }
+
         // copies the bootstrap methods in the class writer
-        int boostrapMethodCount = readUnsignedShort(u + 8);
-        for (int j = 0, v = u + 10; j < boostrapMethodCount; j++) {
+        int bootstrapMethodCount = readUnsignedShort(u + 8);
+
+        for (int j = 0, v = u + 10; j < bootstrapMethodCount; j++) {
             int position = v - u - 10;
             int hashCode = readConst(readUnsignedShort(v), c).hashCode();
+
             for (int k = readUnsignedShort(v + 2); k > 0; --k) {
                 hashCode ^= readConst(readUnsignedShort(v + 4), c).hashCode();
                 v += 2;
             }
+
             v += 4;
             Item item = new Item(j);
             item.set(position, hashCode & 0x7FFFFFFF);
@@ -361,20 +360,19 @@ public final class ClassReader {
             item.next = items[index];
             items[index] = item;
         }
+
         int attrSize = readInt(u + 4);
         ByteVector bootstrapMethods = new ByteVector(attrSize + 62);
         bootstrapMethods.putByteArray(b, u + 10, attrSize - 2);
-        classWriter.bootstrapMethodsCount = boostrapMethodCount;
+        classWriter.bootstrapMethodsCount = bootstrapMethodCount;
         classWriter.bootstrapMethods = bootstrapMethods;
     }
 
     /**
      * Constructs a new {@link ClassReader} object.
      * 
-     * @param is
-     *            an input stream from which to read the class.
-     * @throws IOException
-     *             if a problem occurs during reading.
+     * @param is an input stream from which to read the class.
+     * @throws IOException if a problem occurs during reading.
      */
     public ClassReader(InputStream is) throws IOException {
         this(readClass(is));
@@ -383,10 +381,8 @@ public final class ClassReader {
     /**
      * Constructs a new {@link ClassReader} object.
      * 
-     * @param name
-     *            the binary qualified name of the class to be read.
-     * @throws IOException
-     *             if an exception occurs during reading.
+     * @param name the binary qualified name of the class to be read.
+     * @throws IOException if an exception occurs during reading.
      */
     public ClassReader(String name) throws IOException {
         this(readClass(ClassLoader.getSystemResourceAsStream(name.replace('.', '/') + ".class")));
@@ -395,93 +391,66 @@ public final class ClassReader {
     /**
      * Reads the bytecode of a class.
      * 
-     * @param is
-     *            an input stream from which to read the class.
+     * @param is an input stream from which to read the class.
      * @return the bytecode read from the given input stream.
-     * @throws IOException
-     *             if a problem occurs during reading.
+     * @throws IOException if a problem occurs during reading.
      */
     private static byte[] readClass(InputStream is) throws IOException {
         if (is == null) {
             throw new IOException("Class not found");
         }
+
         try {
             byte[] b = new byte[is.available()];
             int len = 0;
+
             while (true) {
                 int n = is.read(b, len, b.length - len);
+
                 if (n == -1) {
                     if (len < b.length) {
                         byte[] c = new byte[len];
                         System.arraycopy(b, 0, c, 0, len);
                         b = c;
                     }
+
                     return b;
                 }
+
                 len += n;
+
                 if (len == b.length) {
                     int last = is.read();
+
                     if (last < 0) {
                         return b;
                     }
+
                     byte[] c = new byte[b.length + 1000];
                     System.arraycopy(b, 0, c, 0, len);
                     c[len++] = (byte) last;
                     b = c;
                 }
             }
-        } finally {
+        }
+        finally {
             is.close();
         }
     }
 
-    // ------------------------------------------------------------------------
-    // Public methods
-    // ------------------------------------------------------------------------
-
-    /**
-     * Makes the given visitor visit the Java class of this {@link ClassReader}
-     * . This class is the one specified in the constructor (see
-     * {@link #ClassReader(byte[]) ClassReader}).
-     * 
-     * @param classVisitor
-     *            the visitor that must visit this class.
-     * @param flags
-     *            option flags that can be used to modify the default behavior
-     *            of this class. See {@link #SKIP_DEBUG}, {@link #EXPAND_FRAMES}
-     *            , {@link #SKIP_FRAMES}, {@link #SKIP_CODE}.
-     */
-    public void accept(ClassVisitor classVisitor, int flags) {
-        accept(classVisitor, new Attribute[0], flags);
-    }
-
     /**
      * Makes the given visitor visit the Java class of this {@link ClassReader}.
-     * This class is the one specified in the constructor (see
-     * {@link #ClassReader(byte[]) ClassReader}).
+     * This class is the one specified in the constructor (see {@link #ClassReader(byte[]) ClassReader}).
      * 
-     * @param classVisitor
-     *            the visitor that must visit this class.
-     * @param attrs
-     *            prototypes of the attributes that must be parsed during the
-     *            visit of the class. Any attribute whose type is not equal to
-     *            the type of one the prototypes will not be parsed: its byte
-     *            array value will be passed unchanged to the ClassWriter.
-     *            <i>This may corrupt it if this value contains references to
-     *            the constant pool, or has syntactic or semantic links with a
-     *            class element that has been transformed by a class adapter
-     *            between the reader and the writer</i>.
-     * @param flags
-     *            option flags that can be used to modify the default behavior
-     *            of this class. See {@link #SKIP_DEBUG}, {@link #EXPAND_FRAMES}
-     *            , {@link #SKIP_FRAMES}, {@link #SKIP_CODE}.
+     * @param classVisitor the visitor that must visit this class.
+     * @param flags option flags that can be used to modify the default behavior of this class.
+     *              See {@link #SKIP_DEBUG}, {@link #SKIP_CODE}.
      */
-    public void accept(ClassVisitor classVisitor, Attribute[] attrs, int flags) {
+    public void accept(ClassVisitor classVisitor, int flags) {
         int u = header; // current offset in the class file
         char[] c = new char[maxStringLength]; // buffer used to read strings
 
         Context context = new Context();
-        context.attrs = attrs;
         context.flags = flags;
         context.buffer = c;
 
@@ -491,6 +460,7 @@ public final class ClassReader {
         String superClass = readClass(u + 4, c);
         String[] interfaces = new String[readUnsignedShort(u + 6)];
         u += 8;
+
         for (int i = 0; i < interfaces.length; ++i) {
             interfaces[i] = readClass(u, c);
             u += 2;
@@ -511,99 +481,115 @@ public final class ClassReader {
         Attribute attributes = null;
 
         u = getAttributes();
+
         for (int i = readUnsignedShort(u); i > 0; --i) {
             String attrName = readUTF8(u + 2, c);
+
             // tests are sorted in decreasing frequency order
             // (based on frequencies observed on typical classes)
             if ("SourceFile".equals(attrName)) {
                 sourceFile = readUTF8(u + 8, c);
-            } else if ("InnerClasses".equals(attrName)) {
+            }
+            else if ("InnerClasses".equals(attrName)) {
                 innerClasses = u + 8;
-            } else if ("EnclosingMethod".equals(attrName)) {
+            }
+            else if ("EnclosingMethod".equals(attrName)) {
                 enclosingOwner = readClass(u + 8, c);
                 int item = readUnsignedShort(u + 10);
+
                 if (item != 0) {
                     enclosingName = readUTF8(items[item], c);
                     enclosingDesc = readUTF8(items[item] + 2, c);
                 }
-            } else if ("Signature".equals(attrName)) {
+            }
+            else if ("Signature".equals(attrName)) {
                 signature = readUTF8(u + 8, c);
-            } else if ("RuntimeVisibleAnnotations".equals(attrName)) {
+            }
+            else if ("RuntimeVisibleAnnotations".equals(attrName)) {
                 anns = u + 8;
-            } else if ("RuntimeVisibleTypeAnnotations".equals(attrName)) {
+            }
+            else if ("RuntimeVisibleTypeAnnotations".equals(attrName)) {
                 tanns = u + 8;
-            } else if ("Deprecated".equals(attrName)) {
+            }
+            else if ("Deprecated".equals(attrName)) {
                 access |= Opcodes.ACC_DEPRECATED;
-            } else if ("Synthetic".equals(attrName)) {
-                access |= Opcodes.ACC_SYNTHETIC
-                        | ClassWriter.ACC_SYNTHETIC_ATTRIBUTE;
-            } else if ("SourceDebugExtension".equals(attrName)) {
+            }
+            else if ("Synthetic".equals(attrName)) {
+                access |= Opcodes.ACC_SYNTHETIC | ClassWriter.ACC_SYNTHETIC_ATTRIBUTE;
+            }
+            else if ("SourceDebugExtension".equals(attrName)) {
                 int len = readInt(u + 4);
                 sourceDebug = readUTF(u + 8, len, new char[len]);
-            } else if ("RuntimeInvisibleAnnotations".equals(attrName)) {
+            }
+            else if ("RuntimeInvisibleAnnotations".equals(attrName)) {
                 ianns = u + 8;
-            } else if ("RuntimeInvisibleTypeAnnotations".equals(attrName)) {
+            }
+            else if ("RuntimeInvisibleTypeAnnotations".equals(attrName)) {
                 itanns = u + 8;
-            } else if ("BootstrapMethods".equals(attrName)) {
+            }
+            else if ("BootstrapMethods".equals(attrName)) {
                 int[] bootstrapMethods = new int[readUnsignedShort(u + 8)];
+
                 for (int j = 0, v = u + 10; j < bootstrapMethods.length; j++) {
                     bootstrapMethods[j] = v;
                     v += 2 + readUnsignedShort(v + 2) << 1;
                 }
+
                 context.bootstrapMethods = bootstrapMethods;
-            } else {
-                Attribute attr = readAttribute(attrs, attrName, u + 8, readInt(u + 4));
+            }
+            else {
+                Attribute attr = readAttribute(attrName, u + 8, readInt(u + 4));
+
                 if (attr != null) {
                     attr.next = attributes;
                     attributes = attr;
                 }
             }
+
             u += 6 + readInt(u + 4);
         }
 
         // visits the class declaration
-        classVisitor.visit(readInt(items[1] - 7), access, name, signature,
-                superClass, interfaces);
+        classVisitor.visit(readInt(items[1] - 7), access, name, signature, superClass, interfaces);
 
         // visits the source and debug info
-        if ((flags & SKIP_DEBUG) == 0
-                && (sourceFile != null || sourceDebug != null)) {
+        if ((flags & SKIP_DEBUG) == 0 && (sourceFile != null || sourceDebug != null)) {
             classVisitor.visitSource(sourceFile, sourceDebug);
         }
 
         // visits the outer class
         if (enclosingOwner != null) {
-            classVisitor.visitOuterClass(enclosingOwner, enclosingName,
-                    enclosingDesc);
+            classVisitor.visitOuterClass(enclosingOwner, enclosingName, enclosingDesc);
         }
 
         // visits the class annotations and type annotations
         if (anns != 0) {
             for (int i = readUnsignedShort(anns), v = anns + 2; i > 0; --i) {
-                v = readAnnotationValues(v + 2, c, true,
-                        classVisitor.visitAnnotation(readUTF8(v, c), true));
+                v = readAnnotationValues(v + 2, c, true, classVisitor.visitAnnotation(readUTF8(v, c), true));
             }
         }
+
         if (ianns != 0) {
             for (int i = readUnsignedShort(ianns), v = ianns + 2; i > 0; --i) {
-                v = readAnnotationValues(v + 2, c, true,
-                        classVisitor.visitAnnotation(readUTF8(v, c), false));
+                v = readAnnotationValues(v + 2, c, true, classVisitor.visitAnnotation(readUTF8(v, c), false));
             }
         }
+
         if (tanns != 0) {
             for (int i = readUnsignedShort(tanns), v = tanns + 2; i > 0; --i) {
                 v = readAnnotationTarget(context, v);
-                v = readAnnotationValues(v + 2, c, true,
-                        classVisitor.visitTypeAnnotation(context.typeRef,
-                                context.typePath, readUTF8(v, c), true));
+                v = readAnnotationValues(
+                    v + 2, c, true,
+                    classVisitor.visitTypeAnnotation(context.typeRef, context.typePath, readUTF8(v, c), true));
             }
         }
+
         if (itanns != 0) {
             for (int i = readUnsignedShort(itanns), v = itanns + 2; i > 0; --i) {
                 v = readAnnotationTarget(context, v);
-                v = readAnnotationValues(v + 2, c, true,
-                        classVisitor.visitTypeAnnotation(context.typeRef,
-                                context.typePath, readUTF8(v, c), false));
+                v = readAnnotationValues(
+                    v + 2, c, true,
+                    classVisitor.visitTypeAnnotation(context.typeRef, context.typePath, readUTF8(v, c), false));
             }
         }
 
@@ -618,20 +604,23 @@ public final class ClassReader {
         // visits the inner classes
         if (innerClasses != 0) {
             int v = innerClasses + 2;
+
             for (int i = readUnsignedShort(innerClasses); i > 0; --i) {
-                classVisitor.visitInnerClass(readClass(v, c),
-                        readClass(v + 2, c), readUTF8(v + 4, c),
-                        readUnsignedShort(v + 6));
+                classVisitor.visitInnerClass(
+                    readClass(v, c), readClass(v + 2, c), readUTF8(v + 4, c), readUnsignedShort(v + 6));
                 v += 8;
             }
         }
 
         // visits the fields and methods
         u = header + 10 + 2 * interfaces.length;
+
         for (int i = readUnsignedShort(u - 2); i > 0; --i) {
             u = readField(classVisitor, context, u);
         }
+
         u += 2;
+
         for (int i = readUnsignedShort(u - 2); i > 0; --i) {
             u = readMethod(classVisitor, context, u);
         }
@@ -670,40 +659,52 @@ public final class ClassReader {
 
         for (int i = readUnsignedShort(u); i > 0; --i) {
             String attrName = readUTF8(u + 2, c);
+
             // tests are sorted in decreasing frequency order
             // (based on frequencies observed on typical classes)
             if ("ConstantValue".equals(attrName)) {
                 int item = readUnsignedShort(u + 8);
                 value = item == 0 ? null : readConst(item, c);
-            } else if ("Signature".equals(attrName)) {
+            }
+            else if ("Signature".equals(attrName)) {
                 signature = readUTF8(u + 8, c);
-            } else if ("Deprecated".equals(attrName)) {
+            }
+            else if ("Deprecated".equals(attrName)) {
                 access |= Opcodes.ACC_DEPRECATED;
-            } else if ("Synthetic".equals(attrName)) {
+            }
+            else if ("Synthetic".equals(attrName)) {
                 access |= Opcodes.ACC_SYNTHETIC
                         | ClassWriter.ACC_SYNTHETIC_ATTRIBUTE;
-            } else if ("RuntimeVisibleAnnotations".equals(attrName)) {
+            }
+            else if ("RuntimeVisibleAnnotations".equals(attrName)) {
                 anns = u + 8;
-            } else if ("RuntimeVisibleTypeAnnotations".equals(attrName)) {
+            }
+            else if ("RuntimeVisibleTypeAnnotations".equals(attrName)) {
                 tanns = u + 8;
-            } else if ("RuntimeInvisibleAnnotations".equals(attrName)) {
+            }
+            else if ("RuntimeInvisibleAnnotations".equals(attrName)) {
                 ianns = u + 8;
-            } else if ("RuntimeInvisibleTypeAnnotations".equals(attrName)) {
+            }
+            else if ("RuntimeInvisibleTypeAnnotations".equals(attrName)) {
                 itanns = u + 8;
-            } else {
-                Attribute attr = readAttribute(context.attrs, attrName, u + 8, readInt(u + 4));
+            }
+            else {
+                Attribute attr = readAttribute(attrName, u + 8, readInt(u + 4));
+
                 if (attr != null) {
                     attr.next = attributes;
                     attributes = attr;
                 }
             }
+
             u += 6 + readInt(u + 4);
         }
+
         u += 2;
 
         // visits the field declaration
-        FieldVisitor fv = classVisitor.visitField(access, name, desc,
-                signature, value);
+        FieldVisitor fv = classVisitor.visitField(access, name, desc, signature, value);
+
         if (fv == null) {
             return u;
         }
@@ -711,30 +712,29 @@ public final class ClassReader {
         // visits the field annotations and type annotations
         if (anns != 0) {
             for (int i = readUnsignedShort(anns), v = anns + 2; i > 0; --i) {
-                v = readAnnotationValues(v + 2, c, true,
-                        fv.visitAnnotation(readUTF8(v, c), true));
+                v = readAnnotationValues(v + 2, c, true, fv.visitAnnotation(readUTF8(v, c), true));
             }
         }
+
         if (ianns != 0) {
             for (int i = readUnsignedShort(ianns), v = ianns + 2; i > 0; --i) {
-                v = readAnnotationValues(v + 2, c, true,
-                        fv.visitAnnotation(readUTF8(v, c), false));
+                v = readAnnotationValues(v + 2, c, true, fv.visitAnnotation(readUTF8(v, c), false));
             }
         }
+
         if (tanns != 0) {
             for (int i = readUnsignedShort(tanns), v = tanns + 2; i > 0; --i) {
                 v = readAnnotationTarget(context, v);
-                v = readAnnotationValues(v + 2, c, true,
-                        fv.visitTypeAnnotation(context.typeRef,
-                                context.typePath, readUTF8(v, c), true));
+                v = readAnnotationValues(
+                    v + 2, c, true, fv.visitTypeAnnotation(context.typeRef, context.typePath, readUTF8(v, c), true));
             }
         }
+
         if (itanns != 0) {
             for (int i = readUnsignedShort(itanns), v = itanns + 2; i > 0; --i) {
                 v = readAnnotationTarget(context, v);
-                v = readAnnotationValues(v + 2, c, true,
-                        fv.visitTypeAnnotation(context.typeRef,
-                                context.typePath, readUTF8(v, c), false));
+                v = readAnnotationValues(
+                    v + 2, c, true, fv.visitTypeAnnotation(context.typeRef, context.typePath, readUTF8(v, c), false));
             }
         }
 
@@ -789,56 +789,72 @@ public final class ClassReader {
 
         for (int i = readUnsignedShort(u); i > 0; --i) {
             String attrName = readUTF8(u + 2, c);
+
             // tests are sorted in decreasing frequency order
             // (based on frequencies observed on typical classes)
             if ("Code".equals(attrName)) {
                 if ((context.flags & SKIP_CODE) == 0) {
                     code = u + 8;
                 }
-            } else if ("Exceptions".equals(attrName)) {
+            }
+            else if ("Exceptions".equals(attrName)) {
                 exceptions = new String[readUnsignedShort(u + 8)];
                 exception = u + 10;
                 for (int j = 0; j < exceptions.length; ++j) {
                     exceptions[j] = readClass(exception, c);
                     exception += 2;
                 }
-            } else if ("Signature".equals(attrName)) {
+            }
+            else if ("Signature".equals(attrName)) {
                 signature = readUTF8(u + 8, c);
-            } else if ("Deprecated".equals(attrName)) {
+            }
+            else if ("Deprecated".equals(attrName)) {
                 context.access |= Opcodes.ACC_DEPRECATED;
-            } else if ("RuntimeVisibleAnnotations".equals(attrName)) {
+            }
+            else if ("RuntimeVisibleAnnotations".equals(attrName)) {
                 anns = u + 8;
-            } else if ("RuntimeVisibleTypeAnnotations".equals(attrName)) {
+            }
+            else if ("RuntimeVisibleTypeAnnotations".equals(attrName)) {
                 tanns = u + 8;
-            } else if ("AnnotationDefault".equals(attrName)) {
+            }
+            else if ("AnnotationDefault".equals(attrName)) {
                 dann = u + 8;
-            } else if ("Synthetic".equals(attrName)) {
-                context.access |= Opcodes.ACC_SYNTHETIC
-                        | ClassWriter.ACC_SYNTHETIC_ATTRIBUTE;
-            } else if ("RuntimeInvisibleAnnotations".equals(attrName)) {
+            }
+            else if ("Synthetic".equals(attrName)) {
+                context.access |= Opcodes.ACC_SYNTHETIC | ClassWriter.ACC_SYNTHETIC_ATTRIBUTE;
+            }
+            else if ("RuntimeInvisibleAnnotations".equals(attrName)) {
                 ianns = u + 8;
-            } else if ("RuntimeInvisibleTypeAnnotations".equals(attrName)) {
+            }
+            else if ("RuntimeInvisibleTypeAnnotations".equals(attrName)) {
                 itanns = u + 8;
-            } else if ("RuntimeVisibleParameterAnnotations".equals(attrName)) {
+            }
+            else if ("RuntimeVisibleParameterAnnotations".equals(attrName)) {
                 mpanns = u + 8;
-            } else if ("RuntimeInvisibleParameterAnnotations".equals(attrName)) {
+            }
+            else if ("RuntimeInvisibleParameterAnnotations".equals(attrName)) {
                 impanns = u + 8;
-            } else if ("MethodParameters".equals(attrName)) {
+            }
+            else if ("MethodParameters".equals(attrName)) {
                 methodParameters = u + 8;
-            } else {
-                Attribute attr = readAttribute(context.attrs, attrName, u + 8, readInt(u + 4));
+            }
+            else {
+                Attribute attr = readAttribute(attrName, u + 8, readInt(u + 4));
+
                 if (attr != null) {
                     attr.next = attributes;
                     attributes = attr;
                 }
             }
+
             u += 6 + readInt(u + 4);
         }
+
         u += 2;
 
         // visits the method declaration
-        MethodVisitor mv = classVisitor.visitMethod(context.access,
-                context.name, context.desc, signature, exceptions);
+        MethodVisitor mv = classVisitor.visitMethod(context.access, context.name, context.desc, signature, exceptions);
+
         if (mv == null) {
             return u;
         }
@@ -855,20 +871,26 @@ public final class ClassReader {
          */
         if (mv instanceof MethodWriter) {
             MethodWriter mw = (MethodWriter) mv;
+
             if (mw.cw.cr == this && signature == mw.signature) {
                 boolean sameExceptions = false;
+
                 if (exceptions == null) {
                     sameExceptions = mw.exceptionCount == 0;
-                } else if (exceptions.length == mw.exceptionCount) {
+                }
+                else if (exceptions.length == mw.exceptionCount) {
                     sameExceptions = true;
+
                     for (int j = exceptions.length - 1; j >= 0; --j) {
                         exception -= 2;
+
                         if (mw.exceptions[j] != readUnsignedShort(exception)) {
                             sameExceptions = false;
                             break;
                         }
                     }
                 }
+
                 if (sameExceptions) {
                     /*
                      * we do not copy directly the code into MethodWriter to
@@ -893,41 +915,44 @@ public final class ClassReader {
         if (dann != 0) {
             AnnotationVisitor dv = mv.visitAnnotationDefault();
             readAnnotationValue(dann, c, null, dv);
+
             if (dv != null) {
                 dv.visitEnd();
             }
         }
+
         if (anns != 0) {
             for (int i = readUnsignedShort(anns), v = anns + 2; i > 0; --i) {
-                v = readAnnotationValues(v + 2, c, true,
-                        mv.visitAnnotation(readUTF8(v, c), true));
+                v = readAnnotationValues(v + 2, c, true, mv.visitAnnotation(readUTF8(v, c), true));
             }
         }
+
         if (ianns != 0) {
             for (int i = readUnsignedShort(ianns), v = ianns + 2; i > 0; --i) {
-                v = readAnnotationValues(v + 2, c, true,
-                        mv.visitAnnotation(readUTF8(v, c), false));
+                v = readAnnotationValues(v + 2, c, true, mv.visitAnnotation(readUTF8(v, c), false));
             }
         }
+
         if (tanns != 0) {
             for (int i = readUnsignedShort(tanns), v = tanns + 2; i > 0; --i) {
                 v = readAnnotationTarget(context, v);
-                v = readAnnotationValues(v + 2, c, true,
-                        mv.visitTypeAnnotation(context.typeRef,
-                                context.typePath, readUTF8(v, c), true));
+                v = readAnnotationValues(
+                    v + 2, c, true, mv.visitTypeAnnotation(context.typeRef, context.typePath, readUTF8(v, c), true));
             }
         }
+
         if (itanns != 0) {
             for (int i = readUnsignedShort(itanns), v = itanns + 2; i > 0; --i) {
                 v = readAnnotationTarget(context, v);
-                v = readAnnotationValues(v + 2, c, true,
-                        mv.visitTypeAnnotation(context.typeRef,
-                                context.typePath, readUTF8(v, c), false));
+                v = readAnnotationValues(
+                    v + 2, c, true, mv.visitTypeAnnotation(context.typeRef, context.typePath, readUTF8(v, c), false));
             }
         }
+
         if (mpanns != 0) {
             readParameterAnnotations(mv, context, mpanns, true);
         }
+
         if (impanns != 0) {
             readParameterAnnotations(mv, context, impanns, false);
         }
@@ -955,12 +980,9 @@ public final class ClassReader {
     /**
      * Reads the bytecode of a method and makes the given visitor visit it.
      * 
-     * @param mv
-     *            the visitor that must visit the method's code.
-     * @param context
-     *            information about the class being parsed.
-     * @param u
-     *            the start offset of the code attribute in the class file.
+     * @param mv the visitor that must visit the method's code.
+     * @param context information about the class being parsed.
+     * @param u the start offset of the code attribute in the class file.
      */
     private void readCode(MethodVisitor mv, Context context, int u) {
         // reads the header
@@ -976,9 +998,11 @@ public final class ClassReader {
         int codeEnd = u + codeLength;
         Label[] labels = context.labels = new Label[codeLength + 2];
         readLabel(codeLength + 1, labels);
+
         while (u < codeEnd) {
             int offset = u - codeStart;
             int opcode = b[u] & 0xFF;
+
             switch (ClassWriter.TYPE[opcode]) {
             case ClassWriter.NOARG_INSN:
             case ClassWriter.IMPLVAR_INSN:
@@ -1054,6 +1078,7 @@ public final class ClassReader {
             mv.visitTryCatchBlock(start, end, handler, type);
             u += 8;
         }
+
         u += 2;
 
         // reads the code attributes
@@ -1065,144 +1090,63 @@ public final class ClassReader {
         int nitoff = -1; // next invisible type annotation code offset
         int varTable = 0;
         int varTypeTable = 0;
-        boolean zip = true;
-        boolean unzip = (context.flags & EXPAND_FRAMES) != 0;
-        int stackMap = 0;
-        int stackMapSize = 0;
-        int frameCount = 0;
-        Context frame = null;
-        Attribute attributes = null;
 
         for (int i = readUnsignedShort(u); i > 0; --i) {
             String attrName = readUTF8(u + 2, c);
+
             if ("LocalVariableTable".equals(attrName)) {
                 if ((context.flags & SKIP_DEBUG) == 0) {
                     varTable = u + 8;
+
                     for (int j = readUnsignedShort(u + 8), v = u; j > 0; --j) {
                         int label = readUnsignedShort(v + 10);
+
                         if (labels[label] == null) {
                             readLabel(label, labels).status |= Label.DEBUG;
                         }
+
                         label += readUnsignedShort(v + 12);
+
                         if (labels[label] == null) {
                             readLabel(label, labels).status |= Label.DEBUG;
                         }
+
                         v += 10;
                     }
                 }
-            } else if ("LocalVariableTypeTable".equals(attrName)) {
+            }
+            else if ("LocalVariableTypeTable".equals(attrName)) {
                 varTypeTable = u + 8;
-            } else if ("LineNumberTable".equals(attrName)) {
+            }
+            else if ("LineNumberTable".equals(attrName)) {
                 if ((context.flags & SKIP_DEBUG) == 0) {
                     for (int j = readUnsignedShort(u + 8), v = u; j > 0; --j) {
                         int label = readUnsignedShort(v + 10);
+
                         if (labels[label] == null) {
                             readLabel(label, labels).status |= Label.DEBUG;
                         }
+
                         labels[label].line = readUnsignedShort(v + 12);
                         v += 4;
                     }
                 }
-            } else if ("RuntimeVisibleTypeAnnotations".equals(attrName)) {
+            }
+            else if ("RuntimeVisibleTypeAnnotations".equals(attrName)) {
                 tanns = readTypeAnnotations(mv, context, u + 8, true);
                 ntoff = tanns.length == 0 || readByte(tanns[0]) < 0x43 ? -1
                         : readUnsignedShort(tanns[0] + 1);
-            } else if ("RuntimeInvisibleTypeAnnotations".equals(attrName)) {
+            }
+            else if ("RuntimeInvisibleTypeAnnotations".equals(attrName)) {
                 itanns = readTypeAnnotations(mv, context, u + 8, false);
                 nitoff = itanns.length == 0 || readByte(itanns[0]) < 0x43 ? -1
                         : readUnsignedShort(itanns[0] + 1);
-            } else if ("StackMapTable".equals(attrName)) {
-                if ((context.flags & SKIP_FRAMES) == 0) {
-                    stackMap = u + 10;
-                    stackMapSize = readInt(u + 4);
-                    frameCount = readUnsignedShort(u + 8);
-                }
-                /*
-                 * here we do not extract the labels corresponding to the
-                 * attribute content. This would require a full parsing of the
-                 * attribute, which would need to be repeated in the second
-                 * phase (see below). Instead the content of the attribute is
-                 * read one frame at a time (i.e. after a frame has been
-                 * visited, the next frame is read), and the labels it contains
-                 * are also extracted one frame at a time. Thanks to the
-                 * ordering of frames, having only a "one frame lookahead" is
-                 * not a problem, i.e. it is not possible to see an offset
-                 * smaller than the offset of the current insn and for which no
-                 * Label exist.
-                 */
-                /*
-                 * This is not true for UNINITIALIZED type offsets. We solve
-                 * this by parsing the stack map table without a full decoding
-                 * (see below).
-                 */
-            } else if ("StackMap".equals(attrName)) {
-                if ((context.flags & SKIP_FRAMES) == 0) {
-                    zip = false;
-                    stackMap = u + 10;
-                    stackMapSize = readInt(u + 4);
-                    frameCount = readUnsignedShort(u + 8);
-                }
-                /*
-                 * IMPORTANT! here we assume that the frames are ordered, as in
-                 * the StackMapTable attribute, although this is not guaranteed
-                 * by the attribute format.
-                 */
-            } else {
-                for (int j = 0; j < context.attrs.length; ++j) {
-                    if (context.attrs[j].type.equals(attrName)) {
-                        Attribute attr = context.attrs[j].read(this, u + 8, readInt(u + 4));
-
-                        if (attr != null) {
-                            attr.next = attributes;
-                            attributes = attr;
-                        }
-                    }
-                }
             }
+
             u += 6 + readInt(u + 4);
         }
-        u += 2;
 
-        // generates the first (implicit) stack map frame
-        if (stackMap != 0) {
-            /*
-             * for the first explicit frame the offset is not offset_delta + 1
-             * but only offset_delta; setting the implicit frame offset to -1
-             * allow the use of the "offset_delta + 1" rule in all cases
-             */
-            frame = context;
-            frame.offset = -1;
-            frame.mode = 0;
-            frame.localCount = 0;
-            frame.localDiff = 0;
-            frame.stackCount = 0;
-            frame.local = new Object[maxLocals];
-            frame.stack = new Object[maxStack];
-            if (unzip) {
-                getImplicitFrame(context);
-            }
-            /*
-             * Finds labels for UNINITIALIZED frame types. Instead of decoding
-             * each element of the stack map table, we look for 3 consecutive
-             * bytes that "look like" an UNINITIALIZED type (tag 8, offset
-             * within code bounds, NEW instruction at this offset). We may find
-             * false positives (i.e. not real UNINITIALIZED types), but this
-             * should be rare, and the only consequence will be the creation of
-             * an unneeded label. This is better than creating a label for each
-             * NEW instruction, and faster than fully decoding the whole stack
-             * map table.
-             */
-            for (int i = stackMap; i < stackMap + stackMapSize - 2; ++i) {
-                if (b[i] == 8) { // UNINITIALIZED FRAME TYPE
-                    int v = readUnsignedShort(i + 1);
-                    if (v >= 0 && v < codeLength) {
-                        if ((b[codeStart + v] & 0xFF) == Opcodes.NEW) {
-                            readLabel(v, labels);
-                        }
-                    }
-                }
-            }
-        }
+        u += 2;
 
         // visits the instructions
         u = codeStart;
@@ -1211,36 +1155,18 @@ public final class ClassReader {
 
             // visits the label and line number for this offset, if any
             Label l = labels[offset];
+
             if (l != null) {
                 mv.visitLabel(l);
+
                 if ((context.flags & SKIP_DEBUG) == 0 && l.line > 0) {
                     mv.visitLineNumber(l.line, l);
                 }
             }
 
-            // visits the frame for this offset, if any
-            while (frame != null && (frame.offset == offset || frame.offset == -1)) {
-                // if there is a frame for this offset, makes the visitor visit
-                // it, and reads the next frame if there is one.
-                if (frame.offset != -1) {
-                    if (!zip || unzip) {
-                        mv.visitFrame(Opcodes.F_NEW, frame.localCount,
-                                frame.local, frame.stackCount, frame.stack);
-                    } else {
-                        mv.visitFrame(frame.mode, frame.localDiff, frame.local,
-                                frame.stackCount, frame.stack);
-                    }
-                }
-                if (frameCount > 0) {
-                    stackMap = readFrame(stackMap, zip, unzip, frame);
-                    --frameCount;
-                } else {
-                    frame = null;
-                }
-            }
-
             // visits the instruction at this offset
             int opcode = b[u] & 0xFF;
+
             switch (ClassWriter.TYPE[opcode]) {
             case ClassWriter.NOARG_INSN:
                 mv.visitInsn(opcode);
@@ -1385,25 +1311,29 @@ public final class ClassReader {
             while (tanns != null && tann < tanns.length && ntoff <= offset) {
                 if (ntoff == offset) {
                     int v = readAnnotationTarget(context, tanns[tann]);
-                    readAnnotationValues(v + 2, c, true,
-                            mv.visitInsnAnnotation(context.typeRef,
-                                    context.typePath, readUTF8(v, c), true));
+                    readAnnotationValues(
+                        v + 2, c, true,
+                        mv.visitInsnAnnotation(context.typeRef, context.typePath, readUTF8(v, c), true));
                 }
+
                 ntoff = ++tann >= tanns.length || readByte(tanns[tann]) < 0x43 ? -1
                         : readUnsignedShort(tanns[tann] + 1);
             }
+
             while (itanns != null && itann < itanns.length && nitoff <= offset) {
                 if (nitoff == offset) {
                     int v = readAnnotationTarget(context, itanns[itann]);
-                    readAnnotationValues(v + 2, c, true,
-                            mv.visitInsnAnnotation(context.typeRef,
-                                    context.typePath, readUTF8(v, c), false));
+                    readAnnotationValues(
+                        v + 2, c, true,
+                        mv.visitInsnAnnotation(context.typeRef, context.typePath, readUTF8(v, c), false));
                 }
+
                 nitoff = ++itann >= itanns.length
                         || readByte(itanns[itann]) < 0x43 ? -1
                         : readUnsignedShort(itanns[itann] + 1);
             }
         }
+
         if (labels[codeLength] != null) {
             mv.visitLabel(labels[codeLength]);
         }
@@ -1411,6 +1341,7 @@ public final class ClassReader {
         // visits the local variable tables
         if ((context.flags & SKIP_DEBUG) == 0 && varTable != 0) {
             int[] typeTable = null;
+
             if (varTypeTable != 0) {
                 u = varTypeTable + 2;
                 typeTable = new int[readUnsignedShort(varTypeTable) * 3];
@@ -1421,12 +1352,15 @@ public final class ClassReader {
                     u += 10;
                 }
             }
+
             u = varTable + 2;
+
             for (int i = readUnsignedShort(varTable); i > 0; --i) {
                 int start = readUnsignedShort(u);
                 int length = readUnsignedShort(u + 2);
                 int index = readUnsignedShort(u + 8);
                 String vsignature = null;
+
                 if (typeTable != null) {
                     for (int j = 0; j < typeTable.length; j += 3) {
                         if (typeTable[j] == start && typeTable[j + 1] == index) {
@@ -1435,9 +1369,9 @@ public final class ClassReader {
                         }
                     }
                 }
+
                 mv.visitLocalVariable(readUTF8(u + 4, c), readUTF8(u + 6, c),
-                        vsignature, labels[start], labels[start + length],
-                        index);
+                        vsignature, labels[start], labels[start + length], index);
                 u += 10;
             }
         }
@@ -1447,33 +1381,26 @@ public final class ClassReader {
             for (int i = 0; i < tanns.length; ++i) {
                 if ((readByte(tanns[i]) >> 1) == (0x40 >> 1)) {
                     int v = readAnnotationTarget(context, tanns[i]);
-                    v = readAnnotationValues(v + 2, c, true,
-                            mv.visitLocalVariableAnnotation(context.typeRef,
-                                    context.typePath, context.start,
-                                    context.end, context.index, readUTF8(v, c),
-                                    true));
-                }
-            }
-        }
-        if (itanns != null) {
-            for (int i = 0; i < itanns.length; ++i) {
-                if ((readByte(itanns[i]) >> 1) == (0x40 >> 1)) {
-                    int v = readAnnotationTarget(context, itanns[i]);
-                    v = readAnnotationValues(v + 2, c, true,
-                            mv.visitLocalVariableAnnotation(context.typeRef,
-                                    context.typePath, context.start,
-                                    context.end, context.index, readUTF8(v, c),
-                                    false));
+                    v = readAnnotationValues(
+                        v + 2, c, true,
+                        mv.visitLocalVariableAnnotation(
+                            context.typeRef, context.typePath, context.start, context.end, context.index,
+                            readUTF8(v, c), true));
                 }
             }
         }
 
-        // visits the code attributes
-        while (attributes != null) {
-            Attribute attr = attributes.next;
-            attributes.next = null;
-            mv.visitAttribute(attributes);
-            attributes = attr;
+        if (itanns != null) {
+            for (int i = 0; i < itanns.length; ++i) {
+                if ((readByte(itanns[i]) >> 1) == (0x40 >> 1)) {
+                    int v = readAnnotationTarget(context, itanns[i]);
+                    v = readAnnotationValues(
+                        v + 2, c, true,
+                        mv.visitLocalVariableAnnotation(
+                            context.typeRef, context.typePath, context.start, context.end, context.index,
+                            readUTF8(v, c), false));
+                }
+            }
         }
 
         // visits the max stack and max locals values
@@ -1500,6 +1427,7 @@ public final class ClassReader {
         char[] c = context.buffer;
         int[] offsets = new int[readUnsignedShort(u)];
         u += 2;
+
         for (int i = 0; i < offsets.length; ++i) {
             offsets[i] = u;
             int target = readInt(u);
@@ -1545,17 +1473,20 @@ public final class ClassReader {
                 u += 3;
                 break;
             }
+
             int pathLength = readByte(u);
+
             if ((target >>> 24) == 0x42) {
                 TypePath path = pathLength == 0 ? null : new TypePath(b, u);
                 u += 1 + 2 * pathLength;
-                u = readAnnotationValues(u + 2, c, true,
-                        mv.visitTryCatchAnnotation(target, path,
-                                readUTF8(u, c), visible));
-            } else {
+                u = readAnnotationValues(
+                    u + 2, c, true, mv.visitTryCatchAnnotation(target, path, readUTF8(u, c), visible));
+            }
+            else {
                 u = readAnnotationValues(u + 3 + 2 * pathLength, c, true, null);
             }
         }
+
         return offsets;
     }
 
@@ -1575,6 +1506,7 @@ public final class ClassReader {
      */
     private int readAnnotationTarget(Context context, int u) {
         int target = readInt(u);
+
         switch (target >>> 24) {
         case 0x00: // CLASS_TYPE_PARAMETER
         case 0x01: // METHOD_TYPE_PARAMETER
@@ -1658,17 +1590,22 @@ public final class ClassReader {
         // around supposes that the synthetic parameters are the first ones.
         int synthetics = Type.getArgumentTypes(context.desc).length - n;
         AnnotationVisitor av;
+
         for (i = 0; i < synthetics; ++i) {
             // virtual annotation to detect synthetic parameters in MethodWriter
             av = mv.visitParameterAnnotation(i, "Ljava/lang/Synthetic;", false);
+
             if (av != null) {
                 av.visitEnd();
             }
         }
+
         char[] c = context.buffer;
+
         for (; i < n + synthetics; ++i) {
             int j = readUnsignedShort(v);
             v += 2;
+
             for (; j > 0; --j) {
                 av = mv.visitParameterAnnotation(i, readUTF8(v, c), visible);
                 v = readAnnotationValues(v + 2, c, true, av);
@@ -1681,33 +1618,33 @@ public final class ClassReader {
      * 
      * @param v
      *            the start offset in {@link #b b} of the values to be read
-     *            (including the unsigned short that gives the number of
-     *            values).
+     *            (including the unsigned short that gives the number of values).
      * @param buf
      *            buffer to be used to call {@link #readUTF8 readUTF8},
-     *            {@link #readClass(int,char[]) readClass} or {@link #readConst
-     *            readConst}.
-     * @param named
-     *            if the annotation values are named or not.
-     * @param av
-     *            the visitor that must visit the values.
+     *            {@link #readClass(int,char[]) readClass} or {@link #readConst readConst}.
+     * @param named if the annotation values are named or not.
+     * @param av the visitor that must visit the values.
      * @return the end offset of the annotation values.
      */
     private int readAnnotationValues(int v, char[] buf, boolean named, AnnotationVisitor av) {
         int i = readUnsignedShort(v);
         v += 2;
+
         if (named) {
             for (; i > 0; --i) {
                 v = readAnnotationValue(v + 2, buf, readUTF8(v, buf), av);
             }
-        } else {
+        }
+        else {
             for (; i > 0; --i) {
                 v = readAnnotationValue(v, buf, null, av);
             }
         }
+
         if (av != null) {
             av.visitEnd();
         }
+
         return v;
     }
 
@@ -1729,6 +1666,7 @@ public final class ClassReader {
      */
     private int readAnnotationValue(int v, char[] buf, String name, AnnotationVisitor av) {
         int i;
+
         if (av == null) {
             switch (b[v] & 0xFF) {
             case 'e': // enum_const_value
@@ -1741,6 +1679,7 @@ public final class ClassReader {
                 return v + 3;
             }
         }
+
         switch (b[v++] & 0xFF) {
         case 'I': // pointer to CONSTANT_Integer
         case 'J': // pointer to CONSTANT_Long
@@ -1780,15 +1719,16 @@ public final class ClassReader {
             v += 2;
             break;
         case '@': // annotation_value
-            v = readAnnotationValues(v + 2, buf, true,
-                    av.visitAnnotation(name, readUTF8(v, buf)));
+            v = readAnnotationValues(v + 2, buf, true, av.visitAnnotation(name, readUTF8(v, buf)));
             break;
         case '[': // array_value
             int size = readUnsignedShort(v);
             v += 2;
+
             if (size == 0) {
                 return readAnnotationValues(v - 2, buf, false, av.visitArray(name));
             }
+
             switch (b[v++] & 0xFF) {
             case 'B':
                 byte[] bv = new byte[size];
@@ -1868,208 +1808,7 @@ public final class ClassReader {
                 v = readAnnotationValues(v - 3, buf, false, av.visitArray(name));
             }
         }
-        return v;
-    }
 
-    /**
-     * Computes the implicit frame of the method currently being parsed (as
-     * defined in the given {@link Context}) and stores it in the given context.
-     * 
-     * @param frame
-     *            information about the class being parsed.
-     */
-    private void getImplicitFrame(Context frame) {
-        String desc = frame.desc;
-        Object[] locals = frame.local;
-        int local = 0;
-        if ((frame.access & Opcodes.ACC_STATIC) == 0) {
-            if ("<init>".equals(frame.name)) {
-                locals[local++] = Opcodes.UNINITIALIZED_THIS;
-            } else {
-                locals[local++] = readClass(header + 2, frame.buffer);
-            }
-        }
-        int i = 1;
-        loop: while (true) {
-            int j = i;
-            switch (desc.charAt(i++)) {
-            case 'Z':
-            case 'C':
-            case 'B':
-            case 'S':
-            case 'I':
-                locals[local++] = Opcodes.INTEGER;
-                break;
-            case 'F':
-                locals[local++] = Opcodes.FLOAT;
-                break;
-            case 'J':
-                locals[local++] = Opcodes.LONG;
-                break;
-            case 'D':
-                locals[local++] = Opcodes.DOUBLE;
-                break;
-            case '[':
-                while (desc.charAt(i) == '[') {
-                    ++i;
-                }
-                if (desc.charAt(i) == 'L') {
-                    ++i;
-                    while (desc.charAt(i) != ';') {
-                        ++i;
-                    }
-                }
-                locals[local++] = desc.substring(j, ++i);
-                break;
-            case 'L':
-                while (desc.charAt(i) != ';') {
-                    ++i;
-                }
-                locals[local++] = desc.substring(j + 1, i++);
-                break;
-            default:
-                break loop;
-            }
-        }
-        frame.localCount = local;
-    }
-
-    /**
-     * Reads a stack map frame and stores the result in the given
-     * {@link Context} object.
-     * 
-     * @param stackMap
-     *            the start offset of a stack map frame in the class file.
-     * @param zip
-     *            if the stack map frame at stackMap is compressed or not.
-     * @param unzip
-     *            if the stack map frame must be uncompressed.
-     * @param frame
-     *            where the parsed stack map frame must be stored.
-     * @return the offset of the first byte following the parsed frame.
-     */
-    private int readFrame(int stackMap, boolean zip, boolean unzip, Context frame) {
-        char[] c = frame.buffer;
-        Label[] labels = frame.labels;
-        int tag;
-        int delta;
-        if (zip) {
-            tag = b[stackMap++] & 0xFF;
-        } else {
-            tag = MethodWriter.FULL_FRAME;
-            frame.offset = -1;
-        }
-        frame.localDiff = 0;
-        if (tag < MethodWriter.SAME_LOCALS_1_STACK_ITEM_FRAME) {
-            delta = tag;
-            frame.mode = Opcodes.F_SAME;
-            frame.stackCount = 0;
-        } else if (tag < MethodWriter.RESERVED) {
-            delta = tag - MethodWriter.SAME_LOCALS_1_STACK_ITEM_FRAME;
-            stackMap = readFrameType(frame.stack, 0, stackMap, c, labels);
-            frame.mode = Opcodes.F_SAME1;
-            frame.stackCount = 1;
-        } else {
-            delta = readUnsignedShort(stackMap);
-            stackMap += 2;
-            if (tag == MethodWriter.SAME_LOCALS_1_STACK_ITEM_FRAME_EXTENDED) {
-                stackMap = readFrameType(frame.stack, 0, stackMap, c, labels);
-                frame.mode = Opcodes.F_SAME1;
-                frame.stackCount = 1;
-            } else if (tag >= MethodWriter.CHOP_FRAME
-                    && tag < MethodWriter.SAME_FRAME_EXTENDED) {
-                frame.mode = Opcodes.F_CHOP;
-                frame.localDiff = MethodWriter.SAME_FRAME_EXTENDED - tag;
-                frame.localCount -= frame.localDiff;
-                frame.stackCount = 0;
-            } else if (tag == MethodWriter.SAME_FRAME_EXTENDED) {
-                frame.mode = Opcodes.F_SAME;
-                frame.stackCount = 0;
-            } else if (tag < MethodWriter.FULL_FRAME) {
-                int local = unzip ? frame.localCount : 0;
-                for (int i = tag - MethodWriter.SAME_FRAME_EXTENDED; i > 0; i--) {
-                    stackMap = readFrameType(frame.local, local++, stackMap, c,
-                            labels);
-                }
-                frame.mode = Opcodes.F_APPEND;
-                frame.localDiff = tag - MethodWriter.SAME_FRAME_EXTENDED;
-                frame.localCount += frame.localDiff;
-                frame.stackCount = 0;
-            } else { // if (tag == FULL_FRAME) {
-                frame.mode = Opcodes.F_FULL;
-                int n = readUnsignedShort(stackMap);
-                stackMap += 2;
-                frame.localDiff = n;
-                frame.localCount = n;
-                for (int local = 0; n > 0; n--) {
-                    stackMap = readFrameType(frame.local, local++, stackMap, c,
-                            labels);
-                }
-                n = readUnsignedShort(stackMap);
-                stackMap += 2;
-                frame.stackCount = n;
-                for (int stack = 0; n > 0; n--) {
-                    stackMap = readFrameType(frame.stack, stack++, stackMap, c,
-                            labels);
-                }
-            }
-        }
-        frame.offset += delta + 1;
-        readLabel(frame.offset, labels);
-        return stackMap;
-    }
-
-    /**
-     * Reads a stack map frame type and stores it at the given index in the
-     * given array.
-     * 
-     * @param frame
-     *            the array where the parsed type must be stored.
-     * @param index
-     *            the index in 'frame' where the parsed type must be stored.
-     * @param v
-     *            the start offset of the stack map frame type to read.
-     * @param buf
-     *            a buffer to read strings.
-     * @param labels
-     *            the labels of the method currently being parsed, indexed by
-     *            their offset. If the parsed type is an Uninitialized type, a
-     *            new label for the corresponding NEW instruction is stored in
-     *            this array if it does not already exist.
-     * @return the offset of the first byte after the parsed type.
-     */
-    private int readFrameType(Object[] frame, int index, int v, char[] buf, Label[] labels) {
-        int type = b[v++] & 0xFF;
-        switch (type) {
-        case 0:
-            frame[index] = Opcodes.TOP;
-            break;
-        case 1:
-            frame[index] = Opcodes.INTEGER;
-            break;
-        case 2:
-            frame[index] = Opcodes.FLOAT;
-            break;
-        case 3:
-            frame[index] = Opcodes.DOUBLE;
-            break;
-        case 4:
-            frame[index] = Opcodes.LONG;
-            break;
-        case 5:
-            frame[index] = Opcodes.NULL;
-            break;
-        case 6:
-            frame[index] = Opcodes.UNINITIALIZED_THIS;
-            break;
-        case 7: // Object
-            frame[index] = readClass(v, buf);
-            v += 2;
-            break;
-        default: // Uninitialized
-            frame[index] = readLabel(readUnsignedShort(v), labels);
-            v += 2;
-        }
         return v;
     }
 
@@ -2090,6 +1829,7 @@ public final class ClassReader {
         if (labels[offset] == null) {
             labels[offset] = new Label();
         }
+
         return labels[offset];
     }
 
@@ -2101,20 +1841,26 @@ public final class ClassReader {
     private int getAttributes() {
         // skips the header
         int u = header + 8 + readUnsignedShort(header + 6) * 2;
+
         // skips fields and methods
         for (int i = readUnsignedShort(u); i > 0; --i) {
             for (int j = readUnsignedShort(u + 8); j > 0; --j) {
                 u += 6 + readInt(u + 12);
             }
+
             u += 8;
         }
+
         u += 2;
+
         for (int i = readUnsignedShort(u); i > 0; --i) {
             for (int j = readUnsignedShort(u + 8); j > 0; --j) {
                 u += 6 + readInt(u + 12);
             }
+
             u += 8;
         }
+
         // the attribute_info structure starts just after the methods
         return u + 2;
     }
@@ -2122,162 +1868,112 @@ public final class ClassReader {
     /**
      * Reads an attribute in {@link #b b}.
      * 
-     * @param attrs
-     *            prototypes of the attributes that must be parsed during the
-     *            visit of the class. Any attribute whose type is not equal to
-     *            the type of one the prototypes is ignored (i.e. an empty
-     *            {@link Attribute} instance is returned).
-     * @param type
-     *            the type of the attribute.
+     * @param type the type of the attribute.
      * @param off
      *            index of the first byte of the attribute's content in
      *            {@link #b b}. The 6 attribute header bytes, containing the
      *            type and the length of the attribute, are not taken into
      *            account here (they have already been read).
-     * @param len
-     *            the length of the attribute's content.
+     * @param len the length of the attribute's content.
      * @return the attribute that has been read, or <tt>null</tt> to skip this attribute.
      */
-    private Attribute readAttribute(Attribute[] attrs, String type, int off, int len) {
-        for (int i = 0; i < attrs.length; ++i) {
-            if (attrs[i].type.equals(type)) {
-                return attrs[i].read(this, off, len);
-            }
-        }
+    private Attribute readAttribute(String type, int off, int len) {
         return new Attribute(type).read(this, off, len);
     }
 
-    // ------------------------------------------------------------------------
-    // Utility methods: low level parsing
-    // ------------------------------------------------------------------------
-
     /**
      * Returns the number of constant pool items in {@link #b b}.
-     * 
-     * @return the number of constant pool items in {@link #b b}.
      */
-    public int getItemCount() {
-        return items.length;
-    }
+    public int getItemCount() { return items.length; }
 
     /**
-     * Returns the start index of the constant pool item in {@link #b b}, plus
-     * one. <i>This method is intended for {@link Attribute} sub classes, and is
-     * normally not needed by class generators or adapters.</i>
-     * 
-     * @param item
-     *            the index a constant pool item.
-     * @return the start index of the constant pool item in {@link #b b}, plus
-     *         one.
+     * Returns the start index of the constant pool item in {@link #b b}, plus one.
+     *
+     * @param item the index a constant pool item.
      */
-    public int getItem(int item) {
-        return items[item];
-    }
+    public int getItem(int item) { return items[item]; }
 
     /**
-     * Returns the maximum length of the strings contained in the constant pool
-     * of the class.
-     * 
-     * @return the maximum length of the strings contained in the constant pool
-     *         of the class.
+     * Returns the maximum length of the strings contained in the constant pool of the class.
      */
-    public int getMaxStringLength() {
-        return maxStringLength;
-    }
+    public int getMaxStringLength() { return maxStringLength; }
 
     /**
-     * Reads a byte value in {@link #b b}. <i>This method is intended for
-     * {@link Attribute} sub classes, and is normally not needed by class
-     * generators or adapters.</i>
-     * 
-     * @param index
-     *            the start index of the value to be read in {@link #b b}.
+     * Reads a byte value in {@link #b b}.
+     *
+     * @param index the start index of the value to be read in {@link #b b}.
      * @return the read value.
      */
-    public int readByte(int index) {
-        return b[index] & 0xFF;
-    }
+    private int readByte(int index) { return b[index] & 0xFF; }
 
     /**
-     * Reads an unsigned short value in {@link #b b}. <i>This method is intended
-     * for {@link Attribute} sub classes, and is normally not needed by class
-     * generators or adapters.</i>
-     * 
-     * @param index
-     *            the start index of the value to be read in {@link #b b}.
+     * Reads an unsigned short value in {@link #b b}.
+     *
+     * @param index the start index of the value to be read in {@link #b b}.
      * @return the read value.
      */
-    public int readUnsignedShort(int index) {
+    private int readUnsignedShort(int index) {
         byte[] b = this.b;
         return ((b[index] & 0xFF) << 8) | (b[index + 1] & 0xFF);
     }
 
     /**
-     * Reads a signed short value in {@link #b b}. <i>This method is intended
-     * for {@link Attribute} sub classes, and is normally not needed by class
-     * generators or adapters.</i>
-     * 
-     * @param index
-     *            the start index of the value to be read in {@link #b b}.
+     * Reads a signed short value in {@link #b b}.
+     *
+     * @param index the start index of the value to be read in {@link #b b}.
      * @return the read value.
      */
-    public short readShort(int index) {
+    private short readShort(int index) {
         byte[] b = this.b;
         return (short) (((b[index] & 0xFF) << 8) | (b[index + 1] & 0xFF));
     }
 
     /**
-     * Reads a signed int value in {@link #b b}. <i>This method is intended for
-     * {@link Attribute} sub classes, and is normally not needed by class
-     * generators or adapters.</i>
-     * 
-     * @param index
-     *            the start index of the value to be read in {@link #b b}.
+     * Reads a signed int value in {@link #b b}.
+     *
+     * @param index the start index of the value to be read in {@link #b b}.
      * @return the read value.
      */
-    public int readInt(int index) {
+    private int readInt(int index) {
         byte[] b = this.b;
         return ((b[index] & 0xFF) << 24) | ((b[index + 1] & 0xFF) << 16)
                 | ((b[index + 2] & 0xFF) << 8) | (b[index + 3] & 0xFF);
     }
 
     /**
-     * Reads a signed long value in {@link #b b}. <i>This method is intended for
-     * {@link Attribute} sub classes, and is normally not needed by class
-     * generators or adapters.</i>
-     * 
-     * @param index
-     *            the start index of the value to be read in {@link #b b}.
+     * Reads a signed long value in {@link #b b}.
+     *
+     * @param index the start index of the value to be read in {@link #b b}.
      * @return the read value.
      */
-    public long readLong(int index) {
+    private long readLong(int index) {
         long l1 = readInt(index);
         long l0 = readInt(index + 4) & 0xFFFFFFFFL;
         return (l1 << 32) | l0;
     }
 
     /**
-     * Reads an UTF8 string constant pool item in {@link #b b}. <i>This method
-     * is intended for {@link Attribute} sub classes, and is normally not needed
-     * by class generators or adapters.</i>
+     * Reads an UTF8 string constant pool item in {@link #b b}.
      * 
-     * @param index
-     *            the start index of an unsigned short value in {@link #b b},
-     *            whose value is the index of an UTF8 constant pool item.
-     * @param buf
-     *            buffer to be used to read the item. This buffer must be
-     *            sufficiently large. It is not automatically resized.
+     * @param index the start index of an unsigned short value in {@link #b b}, whose value is the index of an UTF8
+     *              constant pool item.
+     * @param buf buffer to be used to read the item. This buffer must be sufficiently large. It is not automatically
+     *            resized.
      * @return the String corresponding to the specified UTF8 item.
      */
-    public String readUTF8(int index, char[] buf) {
+    private String readUTF8(int index, char[] buf) {
         int item = readUnsignedShort(index);
+
         if (index == 0 || item == 0) {
             return null;
         }
+
         String s = strings[item];
+
         if (s != null) {
             return s;
         }
+
         index = items[item];
         return strings[item] = readUTF(index + 2, readUnsignedShort(index), buf);
     }
@@ -2285,13 +1981,10 @@ public final class ClassReader {
     /**
      * Reads UTF8 string in {@link #b b}.
      * 
-     * @param index
-     *            start offset of the UTF8 string to be read.
-     * @param utfLen
-     *            length of the UTF8 string to be read.
-     * @param buf
-     *            buffer to be used to read the string. This buffer must be
-     *            sufficiently large. It is not automatically resized.
+     * @param index start offset of the UTF8 string to be read.
+     * @param utfLen length of the UTF8 string to be read.
+     * @param buf buffer to be used to read the string. This buffer must be sufficiently large.
+     *            It is not automatically resized.
      * @return the String corresponding to the specified UTF8 string.
      */
     private String readUTF(int index, int utfLen, char[] buf) {
@@ -2332,9 +2025,7 @@ public final class ClassReader {
     }
 
     /**
-     * Reads a class constant pool item in {@link #b b}. <i>This method is
-     * intended for {@link Attribute} sub classes, and is normally not needed by
-     * class generators or adapters.</i>
+     * Reads a class constant pool item in {@link #b b}.
      * 
      * @param index
      *            the start index of an unsigned short value in {@link #b b},
@@ -2344,7 +2035,7 @@ public final class ClassReader {
      *            sufficiently large. It is not automatically resized.
      * @return the String corresponding to the specified class item.
      */
-    public String readClass(int index, char[] buf) {
+    private String readClass(int index, char[] buf) {
         // computes the start index of the CONSTANT_Class item in b
         // and reads the CONSTANT_Utf8 item designated by
         // the first two bytes of this CONSTANT_Class item
@@ -2352,20 +2043,15 @@ public final class ClassReader {
     }
 
     /**
-     * Reads a numeric or string constant pool item in {@link #b b}. <i>This
-     * method is intended for {@link Attribute} sub classes, and is normally not
-     * needed by class generators or adapters.</i>
+     * Reads a numeric or string constant pool item in {@link #b b}.
      * 
-     * @param item
-     *            the index of a constant pool item.
-     * @param buf
-     *            buffer to be used to read the item. This buffer must be
-     *            sufficiently large. It is not automatically resized.
-     * @return the {@link Integer}, {@link Float}, {@link Long}, {@link Double},
-     *         {@link String}, {@link Type} or {@link Handle} corresponding to
-     *         the given constant pool item.
+     * @param item the index of a constant pool item.
+     * @param buf buffer to be used to read the item. This buffer must be sufficiently large. It is not automatically
+     *            resized.
+     * @return the {@link Integer}, {@link Float}, {@link Long}, {@link Double}, {@link String}, {@link Type}
+     * or {@link Handle} corresponding to the given constant pool item.
      */
-    public Object readConst(int item, char[] buf) {
+    private Object readConst(int item, char[] buf) {
         int index = items[item];
         switch (b[index - 1]) {
         case ClassWriter.INT:

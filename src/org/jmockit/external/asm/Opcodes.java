@@ -1,4 +1,4 @@
-/***
+/*
  * ASM: a very small and fast Java bytecode manipulation framework
  * Copyright (c) 2000-2011 INRIA, France Telecom
  * All rights reserved.
@@ -102,7 +102,7 @@ public interface Opcodes {
     // stack map frame types
 
     /**
-     * Represents an expanded frame. See {@link ClassReader#EXPAND_FRAMES}.
+     * Represents an expanded frame.
      */
     int F_NEW = -1;
 

@@ -1,4 +1,4 @@
-/***
+/*
  * ASM: a very small and fast Java bytecode manipulation framework
  * Copyright (c) 2000-2011 INRIA, France Telecom
  * All rights reserved.
@@ -27,7 +27,6 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 package org.jmockit.external.asm;
 
 /**
@@ -36,11 +35,6 @@ package org.jmockit.external.asm;
  * @author Eric Bruneton
  */
 final class Context {
-
-    /**
-     * Prototypes of the attributes that must be parsed for this class.
-     */
-    Attribute[] attrs;
 
     /**
      * The {@link ClassReader} option flags for the parsing of this class.
@@ -90,11 +84,6 @@ final class Context {
     TypePath typePath;
 
     /**
-     * The offset of the latest stack map frame that has been parsed.
-     */
-    int offset;
-
-    /**
      * The labels corresponding to the start of the local variable ranges in the
      * local variable type annotation currently being parsed.
      */
@@ -111,35 +100,4 @@ final class Context {
      * variable type annotation currently being parsed.
      */
     int[] index;
-
-    /**
-     * The encoding of the latest stack map frame that has been parsed.
-     */
-    int mode;
-
-    /**
-     * The number of locals in the latest stack map frame that has been parsed.
-     */
-    int localCount;
-
-    /**
-     * The number locals in the latest stack map frame that has been parsed,
-     * minus the number of locals in the previous frame.
-     */
-    int localDiff;
-
-    /**
-     * The local values of the latest stack map frame that has been parsed.
-     */
-    Object[] local;
-
-    /**
-     * The stack size of the latest stack map frame that has been parsed.
-     */
-    int stackCount;
-
-    /**
-     * The stack values of the latest stack map frame that has been parsed.
-     */
-    Object[] stack;
 }

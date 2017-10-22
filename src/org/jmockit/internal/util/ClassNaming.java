@@ -21,16 +21,17 @@ public final class ClassNaming
    public static boolean isAnonymousClass(@Nonnull String className)
    {
       int p = className.lastIndexOf('$');
-      return isAllNumeric(className, p);
-   }
 
-   public static boolean isAllNumeric(@Nonnull String className, int positionJustBefore)
-   {
-      if (positionJustBefore <= 0) {
+      if (p <= 0) {
          return false;
       }
 
-      int nextPos = positionJustBefore + 1;
+      return isAllNumeric(className, p + 1);
+   }
+
+   private static boolean isAllNumeric(@Nonnull String className, @Nonnegative int initialPosition)
+   {
+      int nextPos = initialPosition;
       int n = className.length();
 
       while (nextPos < n) {

@@ -25,9 +25,6 @@ public final class TestRun
       @Override public void set(Integer valueToAdd) { super.set(get() + valueToAdd); }
    };
 
-   // Used only by the Coverage tool:
-   private int testId;
-
    @Nullable private Class<?> currentTestClass;
    @Nullable private Object currentTestInstance;
    @Nullable private FieldTypeRedefinitions fieldTypeRedefinitions;
@@ -45,8 +42,6 @@ public final class TestRun
    @Nullable public static Class<?> getCurrentTestClass() { return INSTANCE.currentTestClass; }
 
    @Nullable public static Object getCurrentTestInstance() { return INSTANCE.currentTestInstance; }
-
-   public static int getTestId() { return INSTANCE.testId; }
 
    @Nullable
    public static FieldTypeRedefinitions getFieldTypeRedefinitions() { return INSTANCE.fieldTypeRedefinitions; }
@@ -87,7 +82,6 @@ public final class TestRun
 
    public static void prepareForNextTest()
    {
-      INSTANCE.testId++;
       INSTANCE.executingTest.setRecordAndReplay(null);
    }
 

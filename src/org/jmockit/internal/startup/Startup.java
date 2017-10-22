@@ -35,7 +35,7 @@ public final class Startup
       hostJREClassName = ClassLoadingBridgeFields.createSyntheticFieldsInJREClassToHoldClassLoadingBridges(inst);
       inst.addTransformer(CachedClassfiles.INSTANCE, true);
       applyStartupFakes();
-      inst.addTransformer(new ExpectationsTransformer(inst));
+      inst.addTransformer(new ExpectationsTransformer());
    }
 
    private static void applyStartupFakes() {
