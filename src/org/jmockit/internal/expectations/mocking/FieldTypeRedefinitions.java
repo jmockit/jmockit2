@@ -19,8 +19,7 @@ public final class FieldTypeRedefinitions extends TypeRedefinitions
    @Nonnull private final Map<MockedType, InstanceFactory> mockInstanceFactories;
    @Nonnull private final List<MockedType> mockFieldsNotSet;
 
-   public FieldTypeRedefinitions(@Nonnull Class<?> testClass)
-   {
+   public FieldTypeRedefinitions(@Nonnull Class<?> testClass) {
       mockInstanceFactories = new HashMap<>();
       mockFieldsNotSet = new ArrayList<>();
 
@@ -34,8 +33,7 @@ public final class FieldTypeRedefinitions extends TypeRedefinitions
       }
    }
 
-   private void redefineFieldTypes(@Nonnull Class<?> classWithMockFields)
-   {
+   private void redefineFieldTypes(@Nonnull Class<?> classWithMockFields) {
       Class<?> superClass = classWithMockFields.getSuperclass();
 
       if (superClass != null && superClass != Object.class && superClass != org.jmockit.Expectations.class) {
@@ -53,20 +51,16 @@ public final class FieldTypeRedefinitions extends TypeRedefinitions
       }
    }
 
-   private void redefineFieldType(@Nonnull Field field, int modifiers)
-   {
+   private void redefineFieldType(@Nonnull Field field, int modifiers) {
       MockedType mockedType = new MockedType(field);
 
       if (mockedType.isMockableType()) {
-         boolean partialMocking = field.isAnnotationPresent(org.jmockit.Tested.class);
-         boolean needsValueToSet = !isFinal(modifiers) && !partialMocking;
-
-         redefineFieldType(mockedType, partialMocking, needsValueToSet);
+         boolean needsValueToSet = !isFinal(modifiers);
+         redefineFieldType(mockedType, needsValueToSet);
       }
    }
 
-   private void redefineFieldType(@Nonnull MockedType mockedType, boolean partialMocking, boolean needsValueToSet)
-   {
+   private void redefineFieldType(@Nonnull MockedType mockedType, boolean needsValueToSet) {
       FieldTypeRedefinition typeRedefinition = new FieldTypeRedefinition(mockedType);
       boolean redefined;
 
@@ -79,12 +73,7 @@ public final class FieldTypeRedefinitions extends TypeRedefinitions
          }
       }
       else {
-         if (partialMocking) {
-            redefined = typeRedefinition.redefineTypeForTestedField();
-         }
-         else {
-            redefined = typeRedefinition.redefineTypeForFinalField();
-         }
+         redefined = typeRedefinition.redefineTypeForFinalField();
 
          if (redefined) {
             mockFieldsNotSet.add(mockedType);
@@ -96,15 +85,13 @@ public final class FieldTypeRedefinitions extends TypeRedefinitions
       }
    }
 
-   public void assignNewInstancesToMockFields(@Nonnull Object target)
-   {
+   public void assignNewInstancesToMockFields(@Nonnull Object target) {
       TestRun.getExecutingTest().clearInjectableAndNonStrictMocks();
       createAndAssignNewInstances(target);
       obtainAndRegisterInstancesOfFieldsNotSet(target);
    }
 
-   private void createAndAssignNewInstances(@Nonnull Object target)
-   {
+   private void createAndAssignNewInstances(@Nonnull Object target) {
       for (Entry<MockedType, InstanceFactory> metadataAndFactory : mockInstanceFactories.entrySet()) {
          MockedType mockedType = metadataAndFactory.getKey();
          InstanceFactory instanceFactory = metadataAndFactory.getValue();
@@ -116,8 +103,8 @@ public final class FieldTypeRedefinitions extends TypeRedefinitions
 
    @Nonnull
    private Object assignNewInstanceToMockField(
-      @Nonnull Object target, @Nonnull MockedType mockedType, @Nonnull InstanceFactory instanceFactory)
-   {
+      @Nonnull Object target, @Nonnull MockedType mockedType, @Nonnull InstanceFactory instanceFactory
+   ) {
       Field mockField = mockedType.field;
       assert mockField != null;
       Object mock = FieldReflection.getFieldValue(mockField, target);
@@ -126,12 +113,7 @@ public final class FieldTypeRedefinitions extends TypeRedefinitions
          try {
             mock = instanceFactory.create();
          }
-         catch (NoClassDefFoundError e) {
-            StackTrace.filterStackTrace(e);
-            e.printStackTrace();
-            throw e;
-         }
-         catch (ExceptionInInitializerError e) {
+         catch (NoClassDefFoundError | ExceptionInInitializerError e) {
             StackTrace.filterStackTrace(e);
             e.printStackTrace();
             throw e;
@@ -143,8 +125,7 @@ public final class FieldTypeRedefinitions extends TypeRedefinitions
       return mock;
    }
 
-   private void obtainAndRegisterInstancesOfFieldsNotSet(@Nonnull Object target)
-   {
+   private void obtainAndRegisterInstancesOfFieldsNotSet(@Nonnull Object target) {
       for (MockedType metadata : mockFieldsNotSet) {
          assert metadata.field != null;
          Object mock = FieldReflection.getFieldValue(metadata.field, target);
@@ -159,14 +140,10 @@ public final class FieldTypeRedefinitions extends TypeRedefinitions
     * Returns true iff the mock instance concrete class is not mocked in some test, ie it's a class
     * which only appears in the code under test.
     */
-   public boolean captureNewInstanceForApplicableMockField(@Nonnull Object mock)
-   {
-      return false;
-   }
+   public boolean captureNewInstanceForApplicableMockField(@Nonnull Object mock) { return false; }
 
    @Override
-   public void cleanUp()
-   {
+   public void cleanUp() {
       TestRun.getExecutingTest().getCascadingTypes().clear();
       super.cleanUp();
    }

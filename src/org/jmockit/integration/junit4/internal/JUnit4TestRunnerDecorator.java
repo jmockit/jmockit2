@@ -15,9 +15,9 @@ import java.lang.reflect.*;
 final class JUnit4TestRunnerDecorator extends TestRunnerDecorator
 {
    @Nullable
-   Object invokeExplosively(@Nonnull FakeInvocation invocation, @Nullable Object target, Object... params)
-      throws Throwable
-   {
+   Object invokeExplosively(
+      @Nonnull FakeInvocation invocation, @Nullable Object target, Object... params
+   ) throws Throwable {
       FrameworkMethod it = invocation.getInvokedInstance();
 
       // A @BeforeClass/@AfterClass method:
@@ -77,8 +77,7 @@ final class JUnit4TestRunnerDecorator extends TestRunnerDecorator
    }
 
    @Nullable
-   private Object executeClassMethod(@Nonnull FakeInvocation inv, @Nonnull Object[] params) throws Throwable
-   {
+   private Object executeClassMethod(@Nonnull FakeInvocation inv, @Nonnull Object[] params) throws Throwable {
       FrameworkMethod method = inv.getInvokedInstance();
       handleMockingOutsideTests(method);
 
@@ -88,16 +87,14 @@ final class JUnit4TestRunnerDecorator extends TestRunnerDecorator
       return method.invokeExplosively(null, params);
    }
 
-   private void prepareToExecuteSetupMethod(@Nonnull Object target)
-   {
+   private void prepareToExecuteSetupMethod(@Nonnull Object target) {
       discardTestLevelMockedTypes();
       prepareForNextTest();
       shouldPrepareForNextTest = false;
       createInstancesForTestedFields(target, true);
    }
 
-   private void handleMockingOutsideTests(@Nonnull FrameworkMethod it)
-   {
+   private void handleMockingOutsideTests(@Nonnull FrameworkMethod it) {
       Class<?> testClass = it.getMethod().getDeclaringClass();
 
       TestRun.enterNoMockingZone();
@@ -121,8 +118,7 @@ final class JUnit4TestRunnerDecorator extends TestRunnerDecorator
       }
    }
 
-   private void handleMockingOutsideTestMethods(@Nonnull Object target)
-   {
+   private void handleMockingOutsideTestMethods(@Nonnull Object target) {
       Class<?> testClass = target.getClass();
 
       TestRun.enterNoMockingZone();
@@ -136,9 +132,8 @@ final class JUnit4TestRunnerDecorator extends TestRunnerDecorator
    }
 
    private static void executeTestMethod(
-      @Nonnull FakeInvocation invocation, @Nonnull Object target, @Nullable Object... parameters)
-      throws Throwable
-   {
+      @Nonnull FakeInvocation invocation, @Nonnull Object target, @Nullable Object... parameters
+   ) throws Throwable {
       SavePoint savePoint = new SavePoint();
 
       TestRun.setRunningIndividualTest(target);

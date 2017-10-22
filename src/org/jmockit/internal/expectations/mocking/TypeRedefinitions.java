@@ -10,10 +10,9 @@ public class TypeRedefinitions
 {
    @Nonnull private final List<Class<?>> targetClasses;
 
-   protected TypeRedefinitions() { targetClasses = new ArrayList<Class<?>>(2); }
+   protected TypeRedefinitions() { targetClasses = new ArrayList<>(2); }
 
-   protected final void addTargetClass(@Nonnull MockedType mockedType)
-   {
+   protected final void addTargetClass(@Nonnull MockedType mockedType) {
       Class<?> targetClass = mockedType.getClassType();
 
       if (targetClass != TypeVariable.class) {
@@ -23,12 +22,9 @@ public class TypeRedefinitions
 
    @Nonnull public final List<Class<?>> getTargetClasses() { return targetClasses; }
 
-   protected static void registerMock(@Nonnull MockedType mockedType, @Nonnull Object mock)
-   {
+   protected static void registerMock(@Nonnull MockedType mockedType, @Nonnull Object mock) {
       TestRun.getExecutingTest().registerMock(mockedType, mock);
    }
 
-   public void cleanUp()
-   {
-   }
+   public void cleanUp() {}
 }

@@ -14,8 +14,8 @@ public final class TestedObjectCreation
 
    TestedObjectCreation(
       @Nonnull InjectionState injectionState, @Nullable FullInjection fullInjection,
-      @Nonnull Type declaredType, @Nonnull Class<?> declaredClass)
-   {
+      @Nonnull Type declaredType, @Nonnull Class<?> declaredClass
+   ) {
       this.injectionState = injectionState;
       this.fullInjection = fullInjection;
       testedClass = new TestedClass(declaredType, declaredClass);
@@ -23,17 +23,16 @@ public final class TestedObjectCreation
 
    public TestedObjectCreation(
       @Nonnull InjectionState injectionState, @Nullable FullInjection fullInjection,
-      @Nonnull Class<?> implementationClass)
-   {
+      @Nonnull Class<?> implementationClass
+   ) {
       this.injectionState = injectionState;
       this.fullInjection = fullInjection;
       testedClass = new TestedClass(implementationClass, implementationClass);
    }
 
    @Nonnull
-   public Object create()
-   {
-      ConstructorSearch constructorSearch = new ConstructorSearch(injectionState, testedClass, fullInjection != null);
+   public Object create() {
+      ConstructorSearch constructorSearch = new ConstructorSearch(injectionState, testedClass);
       Constructor<?> constructor = constructorSearch.findConstructorToUse();
 
       if (constructor == null) {

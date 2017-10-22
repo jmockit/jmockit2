@@ -12,7 +12,6 @@ import static org.jmockit.internal.util.ObjectMethods.*;
 import static org.jmockit.internal.util.Utilities.*;
 
 import javax.annotation.*;
-import java.util.*;
 
 final class MockedClassModifier extends BaseClassModifier
 {
@@ -27,11 +26,10 @@ final class MockedClassModifier extends BaseClassModifier
    private ExecutionMode executionMode;
    private boolean isProxy;
    @Nullable private String defaultFilters;
-   @Nullable List<String> enumSubclasses;
 
    MockedClassModifier(
-      @Nullable ClassLoader classLoader, @Nonnull ClassReader classReader, @Nullable MockedType typeMetadata)
-   {
+      @Nullable ClassLoader classLoader, @Nonnull ClassReader classReader, @Nullable MockedType typeMetadata
+   ) {
       super(classReader);
       mockedType = typeMetadata;
       classFromNonBootstrapClassLoader = classLoader != null;
@@ -40,25 +38,18 @@ final class MockedClassModifier extends BaseClassModifier
       useInstanceBasedMockingIfApplicable();
    }
 
-   private void useInstanceBasedMockingIfApplicable()
-   {
-      if (mockedType != null && mockedType.injectable) {
+   private void useInstanceBasedMockingIfApplicable() {
+      if (mockedType != null && mockedType.isInjectable()) {
          ignoreConstructors = true;
          executionMode = ExecutionMode.PerInstance;
       }
    }
 
-   public void useDynamicMocking(boolean methodsOnly)
-   {
-      ignoreConstructors = methodsOnly;
-      executionMode = ExecutionMode.Partial;
-   }
-
    @Override
    public void visit(
       int version, int access, @Nonnull String name, @Nullable String signature, @Nullable String superName,
-      @Nullable String[] interfaces)
-   {
+      @Nullable String[] interfaces
+   ) {
       validateMockingOfJREClass(name);
 
       super.visit(version, access, name, signature, superName, interfaces);
@@ -79,8 +70,7 @@ final class MockedClassModifier extends BaseClassModifier
       }
    }
 
-   private void validateMockingOfJREClass(@Nonnull String internalName)
-   {
+   private void validateMockingOfJREClass(@Nonnull String internalName) {
       if (internalName.startsWith("java/")) {
          if (isUnmockable(internalName)) {
             throw new IllegalArgumentException("Class " + internalName.replace('/', '.') + " is not mockable");
@@ -99,23 +89,16 @@ final class MockedClassModifier extends BaseClassModifier
    }
 
    @Override
-   public void visitInnerClass(@Nonnull String name, @Nullable String outerName, @Nullable String innerName, int access)
-   {
+   public void visitInnerClass(
+      @Nonnull String name, @Nullable String outerName, @Nullable String innerName, int access
+   ) {
       cw.visitInnerClass(name, outerName, innerName, access);
-
-      if (access == ACC_ENUM + ACC_STATIC) {
-         if (enumSubclasses == null) {
-            enumSubclasses = new ArrayList<>();
-         }
-
-         enumSubclasses.add(name);
-      }
    }
 
    @Nullable @Override
    public MethodVisitor visitMethod(
-      int access, @Nonnull String name, @Nonnull String desc, @Nullable String signature, @Nullable String[] exceptions)
-   {
+      int access, @Nonnull String name, @Nonnull String desc, @Nullable String signature, @Nullable String[] exceptions
+   ) {
       if ((access & METHOD_ACCESS_MASK) != 0) {
          return unmodifiedBytecode(access, name, desc, signature, exceptions);
       }
@@ -161,13 +144,11 @@ final class MockedClassModifier extends BaseClassModifier
       return copyOriginalImplementationCode(visitingConstructor);
    }
 
-   private boolean isConstructorNotAllowedByMockingFilters(@Nonnull String name)
-   {
+   private boolean isConstructorNotAllowedByMockingFilters(@Nonnull String name) {
       return isProxy || ignoreConstructors || isUnmockableInvocation(defaultFilters, name);
    }
 
-   private boolean isMethodNotToBeMocked(int access, @Nonnull String name, @Nonnull String desc)
-   {
+   private boolean isMethodNotToBeMocked(int access, @Nonnull String name, @Nonnull String desc) {
       return
          isNative(access) && (NATIVE_UNSUPPORTED || (access & PUBLIC_OR_PROTECTED) == 0) ||
          (isProxy || executionMode == ExecutionMode.Partial) && (
@@ -177,20 +158,18 @@ final class MockedClassModifier extends BaseClassModifier
 
    @Nonnull
    private MethodVisitor unmodifiedBytecode(
-      int access, @Nonnull String name, @Nonnull String desc, @Nullable String signature, @Nullable String[] exceptions)
-   {
+      int access, @Nonnull String name, @Nonnull String desc, @Nullable String signature, @Nullable String[] exceptions
+   ){
       return cw.visitMethod(access, name, desc, signature, exceptions);
    }
 
    @Nullable
-   private MethodVisitor stubOutClassInitializationIfApplicable(int access)
-   {
+   private MethodVisitor stubOutClassInitializationIfApplicable(int access) {
       startModifiedMethodVersion(access, "<clinit>", "()V", null, null);
       return mw;
    }
 
-   private boolean stubOutFinalizeMethod(int access, @Nonnull String name, @Nonnull String desc)
-   {
+   private boolean stubOutFinalizeMethod(int access, @Nonnull String name, @Nonnull String desc) {
       if ("finalize".equals(name) && "()V".equals(desc)) {
          startModifiedMethodVersion(access, name, desc, null, null);
          generateEmptyImplementation();
@@ -201,8 +180,7 @@ final class MockedClassModifier extends BaseClassModifier
    }
 
    @Nonnull
-   private ExecutionMode determineAppropriateExecutionMode(boolean visitingConstructor)
-   {
+   private ExecutionMode determineAppropriateExecutionMode(boolean visitingConstructor) {
       if (executionMode == ExecutionMode.PerInstance) {
          if (visitingConstructor) {
             return ignoreConstructors ? ExecutionMode.Regular : ExecutionMode.Partial;
@@ -217,16 +195,14 @@ final class MockedClassModifier extends BaseClassModifier
    }
 
    @Nonnull
-   private MethodVisitor generateCallToHandlerThroughMockingBridge(boolean visitingConstructor)
-   {
+   private MethodVisitor generateCallToHandlerThroughMockingBridge(boolean visitingConstructor) {
       // Copies the entire original implementation even for a constructor, in which case the complete bytecode inside
       // the constructor fails the strict verification activated by "-Xfuture". However, this is necessary to allow the
       // full execution of a bootstrap class constructor when the call was not meant to be mocked.
       return copyOriginalImplementationCode(visitingConstructor && classFromNonBootstrapClassLoader);
    }
 
-   private void generateDecisionBetweenReturningOrContinuingToRealImplementation()
-   {
+   private void generateDecisionBetweenReturningOrContinuingToRealImplementation() {
       Label startOfRealImplementation = new Label();
       mw.visitInsn(DUP);
       mw.visitLdcInsn(VOID_TYPE);

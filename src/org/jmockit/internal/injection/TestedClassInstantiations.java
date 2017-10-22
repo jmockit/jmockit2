@@ -19,21 +19,18 @@ public final class TestedClassInstantiations
    @Nonnull private final List<MockedType> injectableFields;
    @Nonnull final InjectionState injectionState;
 
-   public TestedClassInstantiations()
-   {
+   public TestedClassInstantiations() {
       testedFields = new LinkedList<>();
       injectableFields = new ArrayList<>();
       injectionState = new InjectionState();
    }
 
-   public boolean findTestedAndInjectableMembers(@Nonnull Class<?> testClass)
-   {
+   public boolean findTestedAndInjectableMembers(@Nonnull Class<?> testClass) {
       findAllTestedAndInjectableMembersInTestClassHierarchy(testClass);
       return !testedFields.isEmpty() || injectionState.interfaceResolution.canResolveInterfaces();
    }
 
-   private void findAllTestedAndInjectableMembersInTestClassHierarchy(@Nonnull Class<?> testClass)
-   {
+   private void findAllTestedAndInjectableMembersInTestClassHierarchy(@Nonnull Class<?> testClass) {
       Class<?> superclass = testClass.getSuperclass();
 
       if (superclass.getClassLoader() != null) {
@@ -44,8 +41,7 @@ public final class TestedClassInstantiations
       examineMethods(testClass);
    }
 
-   private void examineInstanceFields(@Nonnull Class<?> testClass)
-   {
+   private void examineInstanceFields(@Nonnull Class<?> testClass) {
       for (Field candidateField : testClass.getDeclaredFields()) {
          if ((candidateField.getModifiers() & FIELD_ACCESS_MASK) == 0) {
             addAsTestedOrInjectableFieldIfApplicable(candidateField);
@@ -53,8 +49,7 @@ public final class TestedClassInstantiations
       }
    }
 
-   private void examineMethods(@Nonnull Class<?> testClass)
-   {
+   private void examineMethods(@Nonnull Class<?> testClass) {
       for (Method candidateMethod : testClass.getDeclaredMethods()) {
          if ((candidateMethod.getModifiers() & METHOD_ACCESS_MASK) == 0) {
             addAsTestedMethodIfApplicable(candidateMethod);
@@ -62,8 +57,7 @@ public final class TestedClassInstantiations
       }
    }
 
-   private void addAsTestedOrInjectableFieldIfApplicable(@Nonnull Field fieldFromTestClass)
-   {
+   private void addAsTestedOrInjectableFieldIfApplicable(@Nonnull Field fieldFromTestClass) {
       for (Annotation fieldAnnotation : fieldFromTestClass.getDeclaredAnnotations()) {
          if (fieldAnnotation instanceof Mocked) {
             MockedType mockedType = new MockedType(fieldFromTestClass);
@@ -81,8 +75,7 @@ public final class TestedClassInstantiations
       }
    }
 
-   private void addAsTestedMethodIfApplicable(@Nonnull Method methodFromTestClass)
-   {
+   private void addAsTestedMethodIfApplicable(@Nonnull Method methodFromTestClass) {
       for (Annotation methodAnnotation : methodFromTestClass.getDeclaredAnnotations()) {
          Tested testedMetadata = getTestedAnnotationIfPresent(methodAnnotation);
 
@@ -93,8 +86,7 @@ public final class TestedClassInstantiations
       }
    }
 
-   private void addTestedMethodIfApplicable(@Nonnull Method methodFromTestClass)
-   {
+   private void addTestedMethodIfApplicable(@Nonnull Method methodFromTestClass) {
       Class<?> returnType = methodFromTestClass.getReturnType();
 
       if (returnType == Class.class) {
@@ -114,8 +106,7 @@ public final class TestedClassInstantiations
       }
    }
 
-   public void assignNewInstancesToTestedFields(@Nonnull Object testClassInstance, boolean beforeSetup)
-   {
+   public void assignNewInstancesToTestedFields(@Nonnull Object testClassInstance, boolean beforeSetup) {
       injectionState.buildListsOfInjectables(testClassInstance, injectableFields);
 
       for (TestedObject testedField : testedFields) {
@@ -125,8 +116,7 @@ public final class TestedClassInstantiations
       }
    }
 
-   private void instantiateTestedObject(@Nonnull Object testClassInstance, @Nonnull TestedObject testedObject)
-   {
+   private void instantiateTestedObject(@Nonnull Object testClassInstance, @Nonnull TestedObject testedObject) {
       try {
          testedObject.instantiateWithInjectableValues(testClassInstance);
       }
@@ -135,15 +125,13 @@ public final class TestedClassInstantiations
       }
    }
 
-   public void clearTestedObjects()
-   {
+   public void clearTestedObjects() {
       injectionState.lifecycleMethods.executeTerminationMethodsIfAny();
       injectionState.clearTestedObjectsAndInstantiatedDependencies();
       resetTestedFields(false);
    }
 
-   private void resetTestedFields(boolean duringTearDown)
-   {
+   private void resetTestedFields(boolean duringTearDown) {
       Object testClassInstance = injectionState.getCurrentTestClassInstance();
 
       for (TestedObject testedField : testedFields) {
@@ -151,8 +139,7 @@ public final class TestedClassInstantiations
       }
    }
 
-   public void clearTestedObjectsCreatedDuringSetup()
-   {
+   public void clearTestedObjectsCreatedDuringSetup() {
       resetTestedFields(true);
    }
 
